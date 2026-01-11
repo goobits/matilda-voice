@@ -109,13 +109,19 @@ CONFIG_DEFAULTS = {
     "cache_recent_access_window_seconds": 3600,  # 1 hour
     # Provider-specific Limits
     "google_service_account_json_min_length": 100,
+    # Voice Defaults
+    "default_provider": "edge_tts",
+    "default_voice": "en-US-EmmaMultilingualNeural",
+    "default_rate": "+0%",
+    "default_pitch": "+0Hz",
+    "default_output_format": "mp3",
 }
 
 # Default configuration for JSON compatibility (minimal)
 DEFAULT_CONFIG = {
     "version": "1.0",
     "default_action": "stream",
-    "voice": "edge_tts:en-IE-EmilyNeural",
+    "voice": "edge_tts:en-US-EmmaMultilingualNeural",
     "rate": "+0%",
     "pitch": "+0Hz",
     "output_dir": "~/Downloads",

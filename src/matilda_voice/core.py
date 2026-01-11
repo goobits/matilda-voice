@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, Type
 
 from .base import TTSProvider
 from .exceptions import ProviderLoadError, ProviderNotFoundError, TTSError
-from .internal.config import get_api_key, load_config, parse_voice_setting
+from .internal.config import CONFIG_DEFAULTS, get_api_key, load_config, parse_voice_setting
 from .internal.types import ProviderInfo
 
 
@@ -118,7 +118,7 @@ class TTSEngine:
             elif not voice:
                 # No voice specified - use provider's default or None
                 # Don't use config default if it's for a different provider
-                default_voice = config.get("voice", "edge_tts:en-US-JennyNeural")
+                default_voice = config.get("voice", f"{CONFIG_DEFAULTS['default_provider']}:{CONFIG_DEFAULTS['default_voice']}")
                 default_provider, default_voice_name = parse_voice_setting(default_voice)
                 if default_provider == provider_name:
                     voice = default_voice_name
@@ -132,12 +132,12 @@ class TTSEngine:
                     voice = voice_name
             else:
                 # Use default voice from config
-                default_voice = config.get("voice", "edge_tts:en-US-JennyNeural")
+                default_voice = config.get("voice", f"{CONFIG_DEFAULTS['default_provider']}:{CONFIG_DEFAULTS['default_voice']}")
                 provider_name, voice = parse_voice_setting(default_voice)
 
         if not provider_name:
-            # Fallback to edge_tts if no provider detected
-            provider_name = "edge_tts"
+            # Fallback to default provider if no provider detected
+            provider_name = CONFIG_DEFAULTS["default_provider"]
 
         # Load and instantiate provider
         try:

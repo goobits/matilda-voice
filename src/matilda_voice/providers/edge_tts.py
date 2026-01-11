@@ -160,11 +160,11 @@ class EdgeTTSProvider(TTSProvider):
         self._lazy_load()
 
         # Extract provider-specific options
-        voice = kwargs.get("voice", "en-US-JennyNeural")
-        rate = kwargs.get("rate", "+0%")
-        pitch = kwargs.get("pitch", "+0Hz")
+        voice = kwargs.get("voice", get_config_value("default_voice"))
+        rate = kwargs.get("rate", get_config_value("default_rate"))
+        pitch = kwargs.get("pitch", get_config_value("default_pitch"))
         stream = parse_bool_param(kwargs.get("stream"), False)
-        output_format = kwargs.get("output_format", "mp3")
+        output_format = kwargs.get("output_format", get_config_value("default_output_format"))
 
         # Format rate and pitch
         if not rate.endswith("%"):
@@ -207,7 +207,7 @@ class EdgeTTSProvider(TTSProvider):
             "name": "Edge TTS",
             "description": "Free Microsoft Edge text-to-speech",
             "options": {
-                "voice": "Voice name (default: en-US-JennyNeural)",
+                "voice": f"Voice name (default: {get_config_value('default_voice')})",
                 "rate": "Speech rate adjustment (e.g., +20%, -10%)",
                 "pitch": "Pitch adjustment (e.g., +5Hz, -10Hz)",
                 "stream": "Stream directly to speakers instead of saving to file (true/false)",
