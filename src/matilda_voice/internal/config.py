@@ -440,16 +440,3 @@ def set_api_key(provider: str, api_key: str) -> bool:
     config_key = f"{provider}_api_key"
     return set_setting(config_key, api_key)
 
-
-def is_ssml(text: str) -> bool:
-    """Auto-detect if text contains SSML markup."""
-    text = text.strip()
-    return text.startswith("<speak") and text.endswith("</speak>")
-
-
-def strip_ssml_tags(text: str) -> str:
-    """Strip SSML tags from text, keeping only the content."""
-    import re
-
-    # Remove all XML tags but keep the content
-    return re.sub(r"<[^>]+>", "", text)

@@ -12,11 +12,10 @@ from matilda_voice.internal.config import (
     CONFIG_DEFAULTS,
     _parse_env_value,
     get_config_value,
-    is_ssml,
     parse_voice_setting,
-    strip_ssml_tags,
     validate_api_key,
 )
+from matilda_voice.speech_synthesis.ssml.utils import is_ssml, strip_ssml_tags
 
 
 class TestParseEnvValue:

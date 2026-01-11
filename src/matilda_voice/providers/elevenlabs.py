@@ -22,7 +22,8 @@ from ..internal.audio_utils import (
     parse_bool_param,
     stream_via_tempfile,
 )
-from ..internal.config import get_api_key, get_config_value, is_ssml, strip_ssml_tags
+from ..internal.config import get_api_key, get_config_value
+from ..speech_synthesis.ssml.utils import is_ssml, strip_ssml_tags
 from ..internal.http_retry import request_with_retry, stream_with_retry
 from ..internal.types import ProviderInfo
 

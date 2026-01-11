@@ -9,7 +9,7 @@ from .utils import (
     get_engine,
     parse_provider_shortcuts,
 )
-from matilda_voice.speech_synthesis.ssml_generator import SSMLGenerator, SSMLPlatform
+from matilda_voice.speech_synthesis.ssml.generator import SSMLGenerator, SSMLPlatform
 
 
 def on_speak(
