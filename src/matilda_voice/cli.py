@@ -216,12 +216,13 @@ def cli(ctx, verbose, debug, config):
 @click.option('--rate', default=None,              help="⚡ Speech rate adjustment (e.g., +20%, -50%, 150%)")
 @click.option('--pitch', default=None,              help="🎵 Pitch adjustment (e.g., +5Hz, -10Hz)")
 @click.option('--debug', is_flag=True, default=None,              help="🐞 Display debug information during processing")
+@click.option('--ssml', is_flag=True, default=None,              help="📝 Enable SSML markup processing (e.g., [1s] for pauses, **bold** for emphasis)")
 @click.pass_obj
-def speak(ctx, text, options, voice, rate, pitch, debug):
+def speak(ctx, text, options, voice, rate, pitch, debug, ssml):
     """Speak text aloud"""
     try:
         if hooks and hasattr(hooks, 'on_speak'):
-            kwargs = {                'text': text,                'options': options,                'voice': voice,                'rate': rate,                'pitch': pitch,                'debug': debug,            }
+            kwargs = {                'text': text,                'options': options,                'voice': voice,                'rate': rate,                'pitch': pitch,                'debug': debug,                'ssml': ssml,            }
             hooks.on_speak(ctx=ctx, **kwargs)
         else:
             logger.error(f"Hook 'on_speak' not implemented in cli_hooks.py")
@@ -238,12 +239,13 @@ def speak(ctx, text, options, voice, rate, pitch, debug):
 @click.option('--debug', is_flag=True, default=None,              help="🐞 Display debug information during processing")
 @click.option('--rate', default=None,              help="⚡ Speech rate adjustment (e.g., +20%, -50%, 150%)")
 @click.option('--pitch', default=None,              help="🎵 Pitch adjustment (e.g., +5Hz, -10Hz)")
+@click.option('--ssml', is_flag=True, default=None,              help="📝 Enable SSML markup processing (e.g., [1s] for pauses, **bold** for emphasis)")
 @click.pass_obj
-def save(ctx, text, options, output, format, voice, json, debug, rate, pitch):
+def save(ctx, text, options, output, format, voice, json, debug, rate, pitch, ssml):
     """Save text as an audio file"""
     try:
         if hooks and hasattr(hooks, 'on_save'):
-            kwargs = {                'text': text,                'options': options,                'output': output,                'format': format,                'voice': voice,                'json': json,                'debug': debug,                'rate': rate,                'pitch': pitch,            }
+            kwargs = {                'text': text,                'options': options,                'output': output,                'format': format,                'voice': voice,                'json': json,                'debug': debug,                'rate': rate,                'pitch': pitch,                'ssml': ssml,            }
             hooks.on_save(ctx=ctx, **kwargs)
         else:
             logger.error(f"Hook 'on_save' not implemented in cli_hooks.py")

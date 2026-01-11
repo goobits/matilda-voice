@@ -7,6 +7,7 @@ from matilda_voice.core import get_tts_engine
 
 # Provider registry - this should match what was in the original CLI
 PROVIDERS_REGISTRY = {
+    "azure_tts": "matilda_voice.providers.azure_tts",
     "edge_tts": "matilda_voice.providers.edge_tts",
     "openai_tts": "matilda_voice.providers.openai_tts",
     "elevenlabs": "matilda_voice.providers.elevenlabs",
@@ -17,6 +18,7 @@ PROVIDERS_REGISTRY = {
 
 # Provider shortcuts mapping for @provider syntax
 PROVIDER_SHORTCUTS = {
+    "azure": "azure_tts",
     "edge": "edge_tts",
     "openai": "openai_tts",
     "elevenlabs": "elevenlabs",

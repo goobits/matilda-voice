@@ -131,7 +131,10 @@ cli:
         - name: "debug"
           type: "flag"
           desc: "🐞 Display debug information during processing"
-    
+        - name: "ssml"
+          type: "flag"
+          desc: "📝 Enable SSML markup processing (e.g., [1s] for pauses, **bold** for emphasis)"
+
     save:
       desc: "Save text as an audio file"
       icon: "💾"
@@ -168,7 +171,10 @@ cli:
         - name: "pitch"
           type: "str"
           desc: "🎵 Pitch adjustment (e.g., +5Hz, -10Hz)"
-    
+        - name: "ssml"
+          type: "flag"
+          desc: "📝 Enable SSML markup processing (e.g., [1s] for pauses, **bold** for emphasis)"
+
     voices:
       desc: "Explore and test available voices"
       icon: "🔍"

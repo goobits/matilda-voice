@@ -9,6 +9,7 @@ from .utils import (
     get_engine,
     parse_provider_shortcuts,
 )
+from matilda_voice.speech_synthesis.ssml_generator import SSMLGenerator, SSMLPlatform
 
 
 def on_speak(
@@ -18,6 +19,7 @@ def on_speak(
     rate: Optional[str],
     pitch: Optional[str],
     debug: bool,
+    ssml: bool = False,
     **kwargs,
 ) -> int:
     """Handle the speak command"""
@@ -63,6 +65,13 @@ def on_speak(
             return 1
 
         final_text = " ".join(all_text)
+
+        # Convert to SSML if requested
+        if ssml:
+            generator = SSMLGenerator(SSMLPlatform.AZURE)  # Edge TTS uses Azure SSML
+            final_text = generator.convert_speech_markdown(final_text)
+            if debug:
+                print(f"Generated SSML:\n{final_text}", file=sys.stderr)
 
         # Get TTS engine and synthesize
         engine = get_engine()
@@ -118,6 +127,7 @@ def on_save(
     debug: bool,
     rate: Optional[str],
     pitch: Optional[str],
+    ssml: bool = False,
     **kwargs,
 ) -> int:
     """Handle the save command"""
@@ -151,6 +161,13 @@ def on_save(
             return 1
 
         final_text = " ".join(all_text)
+
+        # Convert to SSML if requested
+        if ssml:
+            generator = SSMLGenerator(SSMLPlatform.AZURE)  # Edge TTS uses Azure SSML
+            final_text = generator.convert_speech_markdown(final_text)
+            if debug:
+                print(f"Generated SSML:\n{final_text}", file=sys.stderr)
 
         # Default output filename if not provided
         if not output:

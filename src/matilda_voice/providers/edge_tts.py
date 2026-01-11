@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Optional
 
@@ -32,6 +33,37 @@ class EdgeTTSProvider(TTSProvider):
                 self.edge_tts = edge_tts
             except ImportError:
                 raise DependencyError("edge-tts not installed. Please install with: pip install edge-tts") from None
+
+    def _is_ssml(self, text: str) -> bool:
+        """Check if text is SSML (starts with <speak tag)."""
+        return text.strip().startswith("<speak")
+
+    def _strip_ssml_to_plain_text(self, ssml: str) -> str:
+        """Convert SSML back to plain text.
+
+        Edge TTS (via edge-tts library) doesn't support SSML - it reverse-engineers
+        the Edge browser's TTS which only accepts plain text. The full Azure Cognitive
+        Services API supports SSML, but edge-tts doesn't.
+
+        This method strips all SSML tags and converts breaks to ellipses.
+        """
+        text = ssml
+        # Remove <speak> wrapper
+        text = re.sub(r"<speak[^>]*>", "", text)
+        text = re.sub(r"</speak>", "", text)
+        # Convert breaks to ellipsis (visual pause cue)
+        text = re.sub(r"<break[^>]*/?>", "...", text)
+        # Remove prosody tags but keep content
+        text = re.sub(r"<prosody[^>]*>", "", text)
+        text = re.sub(r"</prosody>", "", text)
+        # Remove emphasis tags but keep content
+        text = re.sub(r"<emphasis[^>]*>", "", text)
+        text = re.sub(r"</emphasis>", "", text)
+        # Remove any other tags
+        text = re.sub(r"<[^>]+>", "", text)
+        # Clean up whitespace
+        text = re.sub(r"\s+", " ", text).strip()
+        return text
 
     def _run_async_safely(self, coro: Any) -> Any:
         """Safely run async coroutine, handling existing event loops."""
@@ -66,6 +98,15 @@ class EdgeTTSProvider(TTSProvider):
             self.logger.debug(f"Creating Edge TTS communication with voice: {voice}")
             if self.edge_tts is None:
                 raise ProviderError("Edge TTS module not loaded")
+
+            # Handle SSML input - Edge TTS doesn't support SSML, convert to plain text
+            if self._is_ssml(text):
+                self.logger.warning(
+                    "Edge TTS doesn't support SSML. Converting to plain text. "
+                    "Use Azure Cognitive Services provider for full SSML support."
+                )
+                text = self._strip_ssml_to_plain_text(text)
+
             communicate = self.edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
 
             if output_format == "mp3":
@@ -111,6 +152,14 @@ class EdgeTTSProvider(TTSProvider):
             return await self._stream_via_tempfile(text, voice, rate, pitch)
 
         try:
+            # Handle SSML input - Edge TTS doesn't support SSML, convert to plain text
+            if self._is_ssml(text):
+                self.logger.warning(
+                    "Edge TTS doesn't support SSML. Converting to plain text. "
+                    "Use Azure Cognitive Services provider for full SSML support."
+                )
+                text = self._strip_ssml_to_plain_text(text)
+
             communicate = self.edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
 
             # Use StreamPlayer for unified streaming logic
