@@ -180,14 +180,13 @@ class CLIContext:
 # ============================================================================
 # HOOK SYSTEM
 # ============================================================================
-
 def load_hooks():
     """Load user-defined hooks."""
     try:
-        import cli_hooks
-        return cli_hooks
+        import matilda_voice.app_hooks as hooks_module
+        return hooks_module
     except ImportError:
-        logger.warning("No cli_hooks.py found. Please create one with your command implementations.")
+        logger.warning("No hooks module found. Please create one with your command implementations.")
         logger.warning("Example:")
         logger.warning("  def on_build(ctx, **kwargs):")
         logger.warning("      print('Build command implementation')")
@@ -212,7 +211,7 @@ def cli(ctx, verbose, debug, config):
 
 @cli.command('speak')
 @click.argument('text', type=click.STRING, required=False, default=None)
-@click.argument('options', type=click.STRING, default=None)
+@click.argument('options', type=click.STRING, nargs=-1, default=None)
 @click.option('--voice', '-v', default=None,              help="🎤 Voice selection (e.g., en-GB-SoniaNeural for edge_tts)")
 @click.option('--rate', default=None,              help="⚡ Speech rate adjustment (e.g., +20%, -50%, 150%)")
 @click.option('--pitch', default=None,              help="🎵 Pitch adjustment (e.g., +5Hz, -10Hz)")
@@ -231,7 +230,7 @@ def speak(ctx, text, options, voice, rate, pitch, debug):
         handle_error(e, ctx.verbose)
 @cli.command('save')
 @click.argument('text', type=click.STRING, required=False, default=None)
-@click.argument('options', type=click.STRING, default=None)
+@click.argument('options', type=click.STRING, nargs=-1, default=None)
 @click.option('--output', '-o', default=None,              help="💾 Output file path")
 @click.option('--format', '-f', default=None,              help="🔧 Audio output format")
 @click.option('--voice', '-v', default=None,              help="🎤 Voice selection (e.g., en-GB-SoniaNeural for edge_tts)")
@@ -252,7 +251,7 @@ def save(ctx, text, options, output, format, voice, json, debug, rate, pitch):
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('voices')
-@click.argument('args', type=click.STRING, required=False, default=None)
+@click.argument('args', type=click.STRING, nargs=-1, required=False, default=None)
 @click.pass_obj
 def voices(ctx, args):
     """Explore and test available voices"""
@@ -280,7 +279,7 @@ def providers(ctx, provider_name):
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('install')
-@click.argument('args', type=click.STRING, required=False, default=None)
+@click.argument('args', type=click.STRING, nargs=-1, required=False, default=None)
 @click.pass_obj
 def install(ctx, args):
     """Install required provider dependencies"""
@@ -309,7 +308,7 @@ def info(ctx, provider):
         handle_error(e, ctx.verbose)
 @cli.command('document')
 @click.argument('document_path', type=click.STRING, default=None)
-@click.argument('options', type=click.STRING, default=None)
+@click.argument('options', type=click.STRING, nargs=-1, default=None)
 @click.option('--save', is_flag=True, default=None,              help="💾 Save audio output to file")
 @click.option('--output', '-o', default=None,              help="📁 Output file path")
 @click.option('--format', '-f', default=None,              help="🔧 Audio output format")
@@ -355,7 +354,7 @@ def voice_load(ctx, voice_files):
 
 @voice_group.command('unload')
 @click.argument('voice_files', type=click.STRING, nargs=-1, required=False)
-@click.option('', is_flag=True, default=None,              help="🧹 Remove all voices from memory")
+@click.option('--all', is_flag=True, default=None,              help="🧹 Remove all voices from memory")
 @click.pass_obj
 def voice_unload(ctx, voice_files, all):
     """Remove voices from memory"""
@@ -425,6 +424,9 @@ def main():
         cli()
     except Exception as e:
         handle_error(e, '--verbose' in sys.argv or '--debug' in sys.argv)
+
+# Alias for compatibility with different entry point names
+cli_entry = main
 
 if __name__ == '__main__':
     main()

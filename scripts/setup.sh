@@ -27,8 +27,23 @@ export PYTHONDONTWRITEBYTECODE=1
 # Core configuration
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Since this is a generated script, PROJECT_DIR is where the script lives
-readonly PROJECT_DIR="$SCRIPT_DIR"
+# Resolve project root based on presence of pyproject.toml
+PROJECT_DIR="$SCRIPT_DIR"
+FOUND_PROJECT_ROOT="false"
+while true; do
+    if [[ -f "$PROJECT_DIR/pyproject.toml" ]]; then
+        FOUND_PROJECT_ROOT="true"
+        break
+    fi
+    if [[ "$PROJECT_DIR" == "/" ]]; then
+        break
+    fi
+    PROJECT_DIR="$(cd "$PROJECT_DIR/.." && pwd)"
+done
+if [[ "$FOUND_PROJECT_ROOT" != "true" ]]; then
+    PROJECT_DIR="$SCRIPT_DIR"
+fi
+readonly PROJECT_DIR
 readonly CACHE_DIR="$HOME/.cache/setup-framework"
 readonly CACHE_FILE="$CACHE_DIR/system-info.cache"
 readonly CACHE_TTL=3600  # 3600 in seconds
