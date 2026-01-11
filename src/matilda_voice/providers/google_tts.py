@@ -159,13 +159,14 @@ class GoogleTTSProvider(TTSProvider):
             api_status = "✅ Configured (API Key)"
             auth_method = "API Key"
 
-        # Try to get voice count
-        all_voices = self._get_all_voices()
-        voice_count = len(all_voices) if all_voices else 380
-
-        # If no API key or failed to fetch, use sample voices
-        if not all_voices:
+        if not api_key:
             all_voices = list(self.SAMPLE_VOICES.keys())
+            voice_count = len(all_voices)
+        else:
+            all_voices = self._get_all_voices()
+            voice_count = len(all_voices) if all_voices else 380
+            if not all_voices:
+                all_voices = list(self.SAMPLE_VOICES.keys())
 
         return {
             "name": "Google Cloud TTS",

@@ -60,7 +60,7 @@ cache_dir = ".artifacts/cache/mypy"
 "" = "src"
 
 [tool.setuptools.package-data]
-matilda_voice = [ "setup.sh",]
+matilda_voice = [ "setup.sh", "py.typed",]
 goobits_matilda_voice = [ "setup.sh",]
 
 [tool.ruff.lint]

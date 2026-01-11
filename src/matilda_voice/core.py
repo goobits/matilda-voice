@@ -313,7 +313,7 @@ class TTSEngine:
         """Get provider information safely without authentication requirements.
 
         Returns basic provider info even when API keys are missing. Falls back to
-        static information when authentication fails.
+        provider-defined metadata when authentication fails.
 
         Args:
             provider_name: Name of the provider
@@ -321,7 +321,6 @@ class TTSEngine:
         Returns:
             Dictionary with provider information (never None)
         """
-        # Start with basic fallback info
         info = {
             "name": provider_name,
             "description": f"{provider_name.title()} TTS Provider",
@@ -330,6 +329,7 @@ class TTSEngine:
             "capabilities": [],
             "status": "unknown",
         }
+        info.update(self._get_provider_fallback_info(provider_name))
 
         try:
             # Try to get the actual provider info
@@ -339,7 +339,6 @@ class TTSEngine:
                 info["status"] = "available"
             else:
                 # Provider exists but info failed (likely auth issue)
-                info.update(self._get_static_provider_info(provider_name))
                 info["status"] = "authentication_required"
 
         except (ProviderNotFoundError, ProviderLoadError):
@@ -348,10 +347,22 @@ class TTSEngine:
             self.logger.exception(f"Error getting provider info for {provider_name}")
             info["status"] = "error"
             info["error"] = str(e)
-            # Still return static info even on error
-            info.update(self._get_static_provider_info(provider_name))
 
         return info
+
+    def _get_provider_fallback_info(self, provider_name: str) -> Dict[str, Any]:
+        fallback_info: Dict[str, Any] = {}
+
+        try:
+            provider_class = self.load_provider(provider_name)
+        except (ProviderNotFoundError, ProviderLoadError):
+            return fallback_info
+
+        provider_info = getattr(provider_class, "PROVIDER_INFO", None)
+        if isinstance(provider_info, dict):
+            fallback_info.update(provider_info)
+
+        return fallback_info
 
     def _provider_needs_api_key(self, provider_name: str) -> bool:
         """Check if a provider requires an API key for operation.
@@ -379,47 +390,6 @@ class TTSEngine:
         mapping = {"openai_tts": "openai", "google_tts": "google", "elevenlabs": "elevenlabs"}
         return mapping.get(provider_name, provider_name)
 
-    def _get_static_provider_info(self, provider_name: str) -> Dict[str, Any]:
-        """Get static information about a provider when dynamic info fails.
-
-        Args:
-            provider_name: Name of the provider
-
-        Returns:
-            Dictionary with static provider information
-        """
-        static_info = {
-            "edge_tts": {
-                "description": "Microsoft Azure Edge TTS - Free neural voices",
-                "capabilities": ["streaming", "neural_voices", "multiple_languages"],
-                "sample_voices": ["en-US-JennyNeural", "en-IE-EmilyNeural", "en-GB-LibbyNeural"],
-            },
-            "openai_tts": {
-                "description": "OpenAI Text-to-Speech API",
-                "capabilities": ["streaming", "high_quality", "api_key_required"],
-                "sample_voices": ["alloy", "echo", "fable", "nova", "onyx", "shimmer"],
-            },
-            "elevenlabs": {
-                "description": "ElevenLabs AI Voice Synthesis",
-                "capabilities": ["voice_cloning", "streaming", "high_quality", "api_key_required"],
-                "sample_voices": ["rachel", "domi", "bella", "antoni", "elli"],
-            },
-            "google_tts": {
-                "description": "Google Cloud Text-to-Speech",
-                "capabilities": ["neural_voices", "wavenet", "api_key_required"],
-                "sample_voices": ["en-US-Neural2-A", "en-US-Neural2-C", "en-US-Wavenet-A"],
-            },
-            "chatterbox": {
-                "description": "Local voice cloning with GPU/CPU support",
-                "capabilities": ["voice_cloning", "local_processing", "file_input"],
-                "sample_voices": ["<voice_file.wav>", "<voice_file.mp3>"],
-            },
-        }
-
-        return static_info.get(
-            provider_name,
-            {"description": f"Unknown provider: {provider_name}", "capabilities": [], "sample_voices": []},
-        )
 
     def test_provider(self, provider_name: str) -> Dict[str, Any]:
         """Test a provider's availability and basic functionality.

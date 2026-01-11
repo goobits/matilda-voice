@@ -2,7 +2,7 @@ import pytest
 
 from matilda_voice.document_processing.parser_factory import DocumentParserFactory
 from matilda_voice.document_processing.performance_cache import PerformanceOptimizer
-from matilda_voice.speech_synthesis.ssml_generator import SSMLGenerator, SSMLPlatform
+from matilda_voice.speech_synthesis.ssml.generator import SSMLGenerator, SSMLPlatform
 
 
 class TestDocumentProcessing:

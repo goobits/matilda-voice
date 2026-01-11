@@ -46,6 +46,13 @@ logs/
 .env
 .env.local
 
+# Audio files
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+
 # Project specific
 .links
 .claude/settings.json

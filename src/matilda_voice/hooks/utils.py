@@ -4,28 +4,15 @@
 from typing import Any, Optional
 
 from matilda_voice.core import get_tts_engine
+from matilda_voice.registry import PROVIDERS_REGISTRY, PROVIDER_SHORTCUTS
 
-# Provider registry - this should match what was in the original CLI
-PROVIDERS_REGISTRY = {
-    "azure_tts": "matilda_voice.providers.azure_tts",
-    "edge_tts": "matilda_voice.providers.edge_tts",
-    "openai_tts": "matilda_voice.providers.openai_tts",
-    "elevenlabs": "matilda_voice.providers.elevenlabs",
-    "google_tts": "matilda_voice.providers.google_tts",
-    "chatterbox": "matilda_voice.providers.chatterbox",
-    "coqui": "matilda_voice.providers.coqui",
-}
-
-# Provider shortcuts mapping for @provider syntax
-PROVIDER_SHORTCUTS = {
-    "azure": "azure_tts",
-    "edge": "edge_tts",
-    "openai": "openai_tts",
-    "elevenlabs": "elevenlabs",
-    "google": "google_tts",
-    "chatterbox": "chatterbox",
-    "coqui": "coqui",
-}
+__all__ = [
+    "get_engine",
+    "parse_provider_shortcuts",
+    "handle_provider_shortcuts",
+    "PROVIDERS_REGISTRY",
+    "PROVIDER_SHORTCUTS",
+]
 
 
 def parse_provider_shortcuts(args: list) -> tuple[Optional[str], list]:
