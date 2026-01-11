@@ -860,9 +860,9 @@ show_dev_success_message() {
 Development workflow:
   - Edit code in src/matilda_voice/ directory
   - Test immediately with: voice "test"
-  - Run tests with: ./test.sh
+  - Run tests with: make test
 
-💡 No need to run ./setup.sh upgrade after code changes!
+💡 No need to run ./scripts/setup.sh upgrade after code changes!
 "
     echo
 }
