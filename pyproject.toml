@@ -9,7 +9,7 @@ description = "Command-line text-to-speech tool with multiple providers, voice c
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "License :: OSI Approved :: MIT License", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Topic :: Multimedia :: Sound/Audio :: Speech", "Topic :: Software Development :: Libraries :: Python Modules",]
-dependencies = [ "click>=8.0.0,<9.0", "rich-click>=1.7.0,<2.0", "rich>=13.0.0,<14.0", "edge-tts>=7.0.0,<8.0", "httpx>=0.24.0,<1.0", "pydantic>=2.0.0,<3.0", "bleach>=6.1.0,<7.0", "validators>=0.20.0,<1.0", "aiohttp>=3.8.0,<4.0", "pyyaml>=6.0,<7.0",]
+dependencies = [ "click>=8.0.0,<9.0", "rich-click>=1.7.0,<2.0", "rich>=13.0.0,<14.0", "edge-tts>=7.0.0,<8.0", "httpx>=0.24.0,<1.0", "pydantic>=2.0.0,<3.0", "bleach>=6.1.0,<7.0", "validators>=0.20.0,<1.0", "aiohttp>=3.8.0,<4.0", "toml>=0.10.2,<1.0", "pyyaml>=6.0,<7.0",]
 [[project.authors]]
 name = "TTS CLI Contributors"
 

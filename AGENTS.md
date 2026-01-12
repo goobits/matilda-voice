@@ -106,7 +106,7 @@ Provider loading is dynamic via the `PROVIDERS_REGISTRY` dict in `src/matilda_vo
 ### Configuration System
 
 - Default config in `config.py` (DEFAULT_CONFIG constant)
-- XDG-compliant paths (`~/.config/voice/config.toml`)
+- XDG-compliant paths (`~/.matilda/config.toml` under `[voice]`)
 - Voice format: `provider:voice_name` (e.g., `edge_tts:en-IE-EmilyNeural`)
 - Auto-detection of providers from voice strings in `parse_voice_setting()`
 

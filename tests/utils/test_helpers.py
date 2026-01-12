@@ -5,13 +5,13 @@ This module provides common fixtures, helpers, and utilities to reduce
 duplication across test files and improve test maintainability.
 """
 
-import json
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import MagicMock
 
 import pytest
+import toml
 from click.testing import CliRunner
 
 from matilda_voice.base import TTSProvider
@@ -1019,7 +1019,7 @@ def create_test_config(
         Path to created config file
     """
     config_dir.mkdir(parents=True, exist_ok=True)
-    config_file = config_dir / "config.json"
+    config_file = config_dir / "config.toml"
 
     config_data = {
         "default_provider": default_provider,
@@ -1046,7 +1046,7 @@ def create_test_config(
     config_data.update(extra_config)
 
     with open(config_file, "w") as f:
-        json.dump(config_data, f, indent=2)
+        f.write(toml.dumps({"voice": config_data}))
 
     return config_file
 

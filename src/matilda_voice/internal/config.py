@@ -1,7 +1,7 @@
 """Simple configuration management for TTS CLI.
 
 This module provides a lightweight configuration system that supports:
-- TOML configuration file (~/.config/tts/config.toml)
+- TOML configuration file (~/.matilda/config.toml)
 - Environment variable overrides (TTS_<KEY>)
 - Simple function-based access pattern
 
@@ -10,25 +10,13 @@ Usage:
     port = get_config_value('chatterbox_server_port')  # Returns 12345 or env override
 """
 
-import json
 import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-# Try to import TOML library
-try:
-    import tomllib  # type: ignore
-
-    TOML_AVAILABLE = True
-except ImportError:
-    try:
-        import toml as tomllib  # type: ignore
-
-        TOML_AVAILABLE = True
-    except ImportError:
-        TOML_AVAILABLE = False
-        tomllib = None  # type: ignore
+import tomllib
+import toml
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +105,7 @@ CONFIG_DEFAULTS = {
     "default_output_format": "mp3",
 }
 
-# Default configuration for JSON compatibility (minimal)
+# Default configuration for voice settings (minimal)
 DEFAULT_CONFIG = {
     "version": "1.0",
     "default_action": "stream",
@@ -153,19 +141,21 @@ def load_toml_config() -> Dict[str, Any]:
 
     config = CONFIG_DEFAULTS.copy()
 
-    # Load from single TOML config file location
-    config_file = get_config_path().with_suffix(".toml")
-    if config_file.exists() and TOML_AVAILABLE:
+    config_file = get_config_path()
+    if config_file.exists():
         try:
             with open(config_file, "rb") as f:
-                file_config = tomllib.load(f)
+                full_config = tomllib.load(f)
+            file_config = full_config.get("voice")
+            if file_config is None:
+                raise KeyError("Missing [voice] section in matilda config")
 
             # Flatten nested TOML sections to flat keys
             for section, values in file_config.items():
                 if isinstance(values, dict):
                     for key, value in values.items():
                         flat_key = f"{section}_{key}"
-                        if flat_key in config:  # Only override known keys
+                        if flat_key in config:
                             config[flat_key] = value
                 else:
                     if section in config:
@@ -224,22 +214,10 @@ def reload_config() -> None:
 # Configuration file management
 def get_config_path() -> Path:
     """Get the configuration file path, using XDG standard with fallback."""
-    xdg_config = os.environ.get("XDG_CONFIG_HOME")
-    if xdg_config:
-        config_dir = Path(xdg_config) / "voice"
-    else:
-        config_dir = Path.home() / ".config" / "voice"
-
-    config_file = config_dir / "config.json"
-
-    # Fallback to old location for backwards compatibility
-    fallback_file = Path.home() / ".tts.json"
-
-    # If new location doesn't exist but old one does, use old one
-    if not config_file.exists() and fallback_file.exists():
-        return fallback_file
-
-    return config_file
+    env_path = os.environ.get("MATILDA_CONFIG")
+    if env_path:
+        return Path(env_path)
+    return Path.home() / ".matilda" / "config.toml"
 
 
 def get_default_config() -> Dict[str, Any]:
@@ -247,29 +225,33 @@ def get_default_config() -> Dict[str, Any]:
     return DEFAULT_CONFIG.copy()
 
 
-def load_config() -> Dict[str, Any]:
-    """Load JSON configuration from file.
+def _merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    merged = base.copy()
+    for key, value in override.items():
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            merged[key] = _merge_dicts(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
 
-    Returns defaults if file doesn't exist or is corrupt.
-    """
+
+def load_config() -> Dict[str, Any]:
+    """Load TOML configuration from file."""
     config_path = get_config_path()
+    config = get_default_config()
+
+    if not config_path.exists():
+        logger.debug(f"Config file not found at {config_path}, using defaults")
+        return config
 
     try:
-        if config_path.exists():
-            with open(config_path, "r") as f:
-                config = json.load(f)
-
-            # Merge with defaults to ensure all keys are present
-            default_config = get_default_config()
-            default_config.update(config)
-            return default_config
-        else:
-            logger.debug(f"Config file not found at {config_path}, using defaults")
-            return get_default_config()
-
-    except (json.JSONDecodeError, IOError) as e:
+        with open(config_path, "rb") as f:
+            full_config = tomllib.load(f)
+        file_config = full_config.get("voice", {})
+        return _merge_dicts(config, file_config)
+    except Exception as e:
         logger.warning(f"Failed to load config from {config_path}: {e}. Using defaults.")
-        return get_default_config()
+        return config
 
 
 def save_config(config: Dict[str, Any]) -> bool:
@@ -277,16 +259,20 @@ def save_config(config: Dict[str, Any]) -> bool:
     config_path = get_config_path()
 
     try:
-        # Ensure config directory exists
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Write to temporary file first, then rename (atomic operation)
-        temp_path = config_path.with_suffix(".tmp")
-        with open(temp_path, "w") as f:
-            json.dump(config, f, indent=2)
+        if config_path.exists():
+            with open(config_path, "rb") as f:
+                full_config = tomllib.load(f)
+        else:
+            full_config = {}
 
-        # Atomic rename
-        temp_path.rename(config_path)
+        full_config["voice"] = config
+        temp_path = config_path.with_suffix(".tmp")
+        with open(temp_path, "w", encoding="utf-8") as f:
+            f.write(toml.dumps(full_config))
+
+        temp_path.replace(config_path)
         logger.info(f"Configuration saved to {config_path}")
         return True
 
@@ -405,11 +391,11 @@ def validate_api_key(provider: str, api_key: str) -> bool:
 
 
 def get_api_key(provider: str) -> Optional[str]:
-    """Get API key for a provider, checking JSON config and environment.
+    """Get API key for a provider, checking TOML config and environment.
 
     Search order:
     1. Environment variables (PROVIDER_API_KEY)
-    2. JSON configuration (provider_api_key)
+    2. TOML configuration (provider_api_key)
 
     Args:
         provider: Provider name (e.g., 'elevenlabs', 'openai', 'google')
@@ -417,7 +403,7 @@ def get_api_key(provider: str) -> Optional[str]:
     Returns:
         API key string if found and valid, None otherwise
     """
-    # Check JSON config
+    # Check TOML config
     config_key = f"{provider}_api_key"
     json_api_key = get_setting(config_key)
     if json_api_key and validate_api_key(provider, str(json_api_key)):
@@ -439,4 +425,3 @@ def set_api_key(provider: str, api_key: str) -> bool:
 
     config_key = f"{provider}_api_key"
     return set_setting(config_key, api_key)
-

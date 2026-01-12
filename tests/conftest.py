@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+import toml
 
 from matilda_voice.base import TTSProvider
 from matilda_voice.internal.types import Config, ProviderInfo
@@ -311,7 +312,7 @@ def isolated_config_dir(tmp_path, monkeypatch, test_config_factory):
     config_dir.mkdir(parents=True, exist_ok=True)
 
     # Create a test config file with comprehensive settings
-    config_file = config_dir / "config.json"
+    config_file = config_dir / "config.toml"
     config_data = test_config_factory(
         include_api_keys=True,
         custom_settings={
@@ -329,7 +330,7 @@ def isolated_config_dir(tmp_path, monkeypatch, test_config_factory):
     )
 
     with open(config_file, "w") as f:
-        json.dump(config_data, f)
+        f.write(toml.dumps({"voice": config_data}))
 
     # Mock XDG config directory
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
@@ -938,13 +939,13 @@ def unit_test_config(minimal_test_environment, tmp_path, monkeypatch, test_confi
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
 
     # Create minimal config file using factory (without API keys for unit tests)
-    config_file = config_dir / "config.json"
+    config_file = config_dir / "config.toml"
     config_data = test_config_factory(
         include_api_keys=False, custom_settings={"output_directory": str(tmp_path / "output")}
     )
 
     with open(config_file, "w") as f:
-        json.dump(config_data, f)
+        f.write(toml.dumps({"voice": config_data}))
 
     # Mock the get_config_path function to return our test config file
     monkeypatch.setattr("matilda_voice.internal.config.get_config_path", lambda: config_file)
