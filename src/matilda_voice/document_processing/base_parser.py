@@ -6,7 +6,6 @@ from typing import List, Optional
 # Import shared types from package root for use by this module and re-export
 from matilda_voice.internal.types import SemanticElement, SemanticType
 
-# Re-export for backward compatibility
 __all__ = ["BaseDocumentParser", "SemanticElement", "SemanticType"]
 
 

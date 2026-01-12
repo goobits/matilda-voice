@@ -7,7 +7,7 @@ from typing import Any, Optional
 from ..base import TTSProvider
 from ..exceptions import DependencyError, NetworkError, ProviderError
 from ..internal.audio_utils import (
-    StreamPlayer,
+    StreamingPlayer,
     check_audio_environment,
     convert_with_cleanup,
     parse_bool_param,
@@ -162,8 +162,8 @@ class EdgeTTSProvider(TTSProvider):
 
             communicate = self.edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
 
-            # Use StreamPlayer for unified streaming logic
-            player = StreamPlayer(
+            # Use StreamingPlayer for unified streaming logic
+            player = StreamingPlayer(
                 provider_name="Edge TTS",
                 pulse_available=audio_env.get("pulse_available", False),
             )

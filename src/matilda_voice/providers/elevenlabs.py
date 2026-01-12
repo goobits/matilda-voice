@@ -16,16 +16,16 @@ from ..exceptions import (
     map_http_error,
 )
 from ..internal.audio_utils import (
-    StreamPlayer,
+    StreamingPlayer,
     check_audio_environment,
     convert_audio,
     parse_bool_param,
     stream_via_tempfile,
 )
 from ..internal.config import get_api_key, get_config_value
-from ..speech_synthesis.ssml.utils import is_ssml, strip_ssml_tags
 from ..internal.http_retry import request_with_retry, stream_with_retry
 from ..internal.types import ProviderInfo
+from ..speech_synthesis.ssml.utils import is_ssml, strip_ssml_tags
 
 
 class ElevenLabsProvider(TTSProvider):
@@ -287,8 +287,8 @@ class ElevenLabsProvider(TTSProvider):
                         error_msg += f": {response.text[:200]}"
                     raise ProviderError(error_msg)
 
-                # Use StreamPlayer for unified streaming logic
-                player = StreamPlayer(
+                # Use StreamingPlayer for unified streaming logic
+                player = StreamingPlayer(
                     provider_name="ElevenLabs",
                     format_args=["-f", "mp3"],
                 )

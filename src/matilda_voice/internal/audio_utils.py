@@ -920,7 +920,3 @@ def validate_audio_file(audio_path: str) -> bool:
         return result.returncode == 0
     except (FileNotFoundError, subprocess.SubprocessError, subprocess.TimeoutExpired):
         return False
-
-
-# Backward-compatible alias for older call sites.
-StreamPlayer = StreamingPlayer

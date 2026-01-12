@@ -144,8 +144,8 @@ class CoquiProvider(TTSProvider):
             raise ProviderError(f"Coqui TTS synthesis failed: {e}") from e
 
     def _stream_audio_file(self, audio_path: str) -> None:
-        """Stream an audio file to speakers using StreamPlayer."""
-        from ..internal.audio_utils import StreamPlayer
+        """Stream an audio file to speakers using StreamingPlayer."""
+        from ..internal.audio_utils import StreamingPlayer
 
         try:
             self.logger.debug(f"Streaming audio file: {audio_path}")
@@ -153,7 +153,7 @@ class CoquiProvider(TTSProvider):
             with open(audio_path, "rb") as f:
                 audio_data = f.read()
 
-            player = StreamPlayer(provider_name="Coqui")
+            player = StreamingPlayer(provider_name="Coqui")
             player.play(iter([audio_data]))
 
             self.logger.debug("Audio streaming completed")

@@ -33,9 +33,6 @@ from matilda_voice.hooks import (
     parse_provider_shortcuts,
 )
 
-# Re-export config functions for backwards compatibility
-from matilda_voice.internal.config import load_config, save_config
-
 __all__ = [
     # Registries
     "PROVIDERS_REGISTRY",
@@ -61,7 +58,4 @@ __all__ = [
     "on_config",
     # Document
     "on_document",
-    # Config
-    "load_config",
-    "save_config",
 ]

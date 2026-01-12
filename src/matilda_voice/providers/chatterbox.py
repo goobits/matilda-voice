@@ -140,7 +140,7 @@ class ChatterboxProvider(TTSProvider):
 
         import numpy as np  # type: ignore
 
-        from ..internal.audio_utils import StreamPlayer
+        from ..internal.audio_utils import StreamingPlayer
 
         try:
             self.logger.debug("Converting audio tensor for streaming")
@@ -158,9 +158,9 @@ class ChatterboxProvider(TTSProvider):
                 audio_16bit = (audio_normalized * 32767 * 0.95).astype(np.int16)
                 wav_file.writeframes(audio_16bit.tobytes())
 
-            # Stream to ffplay using StreamPlayer
+            # Stream to ffplay using StreamingPlayer
             buffer.seek(0)
-            player = StreamPlayer(provider_name="Chatterbox")
+            player = StreamingPlayer(provider_name="Chatterbox")
             # Create a generator that yields the buffer content as a single chunk
             player.play(iter([buffer.getvalue()]))
 
@@ -172,13 +172,13 @@ class ChatterboxProvider(TTSProvider):
 
     def _stream_audio_data(self, audio_data: bytes) -> None:
         """Stream raw audio data to speakers using ffplay"""
-        from ..internal.audio_utils import StreamPlayer
+        from ..internal.audio_utils import StreamingPlayer
 
         try:
             self.logger.debug("Streaming server audio data")
 
-            # Stream using StreamPlayer
-            player = StreamPlayer(provider_name="Chatterbox")
+            # Stream using StreamingPlayer
+            player = StreamingPlayer(provider_name="Chatterbox")
             player.play(iter([audio_data]))
 
             self.logger.debug("Audio streaming completed")

@@ -31,7 +31,7 @@ installation:
 shell_integration:
   enabled: false
   alias: "voice"
-  aliases: ["tts"]  # Backward compatibility
+  aliases: ["tts"]
 
 validation:
   check_api_keys: false
