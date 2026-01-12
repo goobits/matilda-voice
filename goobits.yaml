@@ -47,6 +47,7 @@ messages:
       voice "Hello world"
       voice save "Hello" -o out.mp3
       voice voices
+      # Config: ~/.matilda/config.toml ([voice])
 
   install_dev_success: |
     Matilda Voice has been installed in development mode!
