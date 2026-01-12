@@ -5,6 +5,25 @@ All notable changes to Goobits Voice will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-12
+
+### Added
+- **Azure TTS Provider** - Native Azure speech synthesis with SSML support
+- **SSML CLI Flag** - Generate SSML markup directly from command line
+- **Coqui TTS Provider** - Local neural TTS with GPU acceleration
+
+### Changed
+- **TOML Configuration** - Migrated from YAML to TOML format for consistency
+- **Provider Architecture** - Refactored provider system with cleaner public API
+- **Error Handling** - Improved error messages and exception handling in CLI hooks
+
+### Fixed
+- Removed legacy StreamPlayer alias and dead re-exports
+- CORS security improvements with persistent token storage
+
+### Removed
+- Legacy YAML configuration support
+
 ## [1.1.4] - 2025-11-10
 
 ### Added
