@@ -18,9 +18,9 @@ from ..internal.audio_utils import (
     stream_via_tempfile,
 )
 from ..internal.config import get_api_key, get_config_value
-from ..speech_synthesis.ssml.utils import is_ssml, strip_ssml_tags
 from ..internal.http_retry import call_with_retry
 from ..internal.types import ProviderInfo
+from ..speech_synthesis.ssml.utils import is_ssml, strip_ssml_tags
 
 
 class OpenAITTSProvider(TTSProvider):

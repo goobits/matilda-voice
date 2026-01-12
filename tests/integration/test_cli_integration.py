@@ -481,8 +481,8 @@ class TestCLIBehavior:
         result = runner.invoke(cli, [], input="hello from stdin")
 
         # Verify the behavior: when no command is given with stdin,
-        # the CLI shows help and exits with code 2 (Click's standard for missing command)
-        assert result.exit_code == 2, "Should exit with code 2 when no command provided with stdin"
+        # the CLI shows help and exits cleanly
+        assert result.exit_code == 0, "Should exit cleanly when no command provided with stdin"
         assert "Usage:" in result.output, "Should show usage/help when no command provided"
 
         # This is the expected behavior - stdin input requires an explicit command

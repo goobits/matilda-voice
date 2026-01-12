@@ -848,6 +848,7 @@ Quick start:
   voice "Hello world"
   voice save "Hello" -o out.mp3
   voice voices
+  # Config: ~/.matilda/config.toml ([voice])
 "
     echo
 }

@@ -8,8 +8,8 @@ Tests all configuration-related CLI functionality including:
 - Real file I/O operations without external API dependencies
 """
 
-import json
 import os
+import tomllib
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -223,9 +223,9 @@ class TestConfigFilePersistence:
 
         # Verify file was created and contains our value
         assert config_file.exists()
-        with open(config_file, "r") as f:
-            config_data = json.load(f)
-        assert config_data["test_key"] == "test_value"
+        with open(config_file, "rb") as f:
+            config_data = tomllib.load(f)
+        assert config_data["voice"]["test_key"] == "test_value"
 
     def test_config_persists_across_commands(self, unit_test_config):
         """Test that configuration persists across different CLI invocations."""
@@ -334,7 +334,7 @@ class TestConfigErrorHandling:
 
             result = runner.invoke(cli, ["config", "set", "test_key", "test_value"])
             # The command handles the error gracefully and prints error message
-            assert result.exit_code == 0  # Error is handled but exit code is 0
+            assert result.exit_code == 1
             assert "Error in config command" in result.output
             assert "Permission denied" in result.output
 
@@ -342,9 +342,9 @@ class TestConfigErrorHandling:
         """Test handling of corrupted configuration file."""
         config_file = unit_test_config["config_file"]
 
-        # Write invalid JSON to the config file
+        # Write invalid TOML to the config file
         with open(config_file, "w") as f:
-            f.write('{"invalid": json content}')
+            f.write('voice = {"invalid":')
 
         runner = CliRunner()
 
@@ -362,7 +362,7 @@ class TestConfigErrorHandling:
             mock_load.side_effect = IOError("Disk error")
 
             result = runner.invoke(cli, ["config", "show", "", ""])
-            assert result.exit_code == 0  # Error is handled but exit code is 0
+            assert result.exit_code == 1
             assert "Error in config command" in result.output
             assert "Disk error" in result.output
 
@@ -425,6 +425,6 @@ class TestConfigIntegration:
             file_content = f.read()
         assert unique_value in file_content
 
-        # Parse JSON to verify structure
-        config_data = json.loads(file_content)
-        assert config_data["filesystem_test"] == unique_value
+        # Parse TOML to verify structure
+        config_data = tomllib.loads(file_content)
+        assert config_data["voice"]["filesystem_test"] == unique_value

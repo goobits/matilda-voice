@@ -6,7 +6,7 @@ from typing import Any, Optional
 import click
 
 from matilda_voice.core import get_tts_engine
-from matilda_voice.registry import PROVIDERS_REGISTRY, PROVIDER_SHORTCUTS
+from matilda_voice.registry import PROVIDER_SHORTCUTS, PROVIDERS_REGISTRY
 
 __all__ = [
     "get_engine",

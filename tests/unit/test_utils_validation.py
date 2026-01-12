@@ -67,14 +67,14 @@ class TestUtilitiesValidation:
         assert config_file.exists()
 
         # Check content
-        import json
+        import tomllib
 
-        with open(config_file) as f:
-            config = json.load(f)
+        with open(config_file, "rb") as f:
+            config = tomllib.load(f)
 
-        assert config["default_provider"] == "test_provider"
-        assert config["default_voice"] == "test_voice"
-        assert "openai_api_key" in config  # Should have default API keys
+        assert config["voice"]["default_provider"] == "test_provider"
+        assert config["voice"]["default_voice"] == "test_voice"
+        assert "openai_api_key" in config["voice"]  # Should have default API keys
 
     def test_provider_shortcuts_data(self):
         """Test that provider shortcuts test data is valid."""

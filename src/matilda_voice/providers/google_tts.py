@@ -18,9 +18,9 @@ from ..exceptions import (
 )
 from ..internal.audio_utils import convert_audio, stream_audio_file
 from ..internal.config import get_api_key, get_config_value
-from ..speech_synthesis.ssml.utils import is_ssml
 from ..internal.http_retry import request_with_retry
 from ..internal.types import ProviderInfo
+from ..speech_synthesis.ssml.utils import is_ssml
 
 
 class GoogleTTSProvider(TTSProvider):

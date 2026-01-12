@@ -12,10 +12,10 @@ Usage:
 
 import logging
 import os
+import tomllib
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-import tomllib
 import toml
 
 logger = logging.getLogger(__name__)

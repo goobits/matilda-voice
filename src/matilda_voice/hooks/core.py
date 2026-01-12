@@ -4,13 +4,14 @@
 import sys
 from typing import Any, Dict, Optional
 
+from matilda_voice.speech_synthesis.ssml.generator import SSMLGenerator, SSMLPlatform
+
 from .utils import (
     PROVIDER_SHORTCUTS,
     exit_with_message,
     get_engine,
     parse_provider_shortcuts,
 )
-from matilda_voice.speech_synthesis.ssml.generator import SSMLGenerator, SSMLPlatform
 
 
 def on_speak(

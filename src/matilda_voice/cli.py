@@ -8,15 +8,21 @@ This is a consolidated Python CLI file with all utilities embedded.
 Generated from: goobits.yaml
 """
 
-import sys
-import os
 import logging
+import os
+import sys
 import traceback
 from pathlib import Path
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 import click
-import yaml
+
+try:
+    import tomllib
+except ImportError:  # pragma: no cover
+    import toml as tomllib
+import toml
+
 # ============================================================================
 # EMBEDDED LOGGER
 # ============================================================================
@@ -74,20 +80,25 @@ class ConfigManager:
 
     def __init__(self, config_file: Optional[Path] = None):
         """Initialize configuration manager."""
+        self.section = "voice"
         if config_file is None:
-            config_dir = Path.home() / '.config' / 'voice'
-            config_dir.mkdir(parents=True, exist_ok=True)
-            config_file = config_dir / 'config.yaml'
+            env_path = os.environ.get("MATILDA_CONFIG")
+            config_file = Path(env_path) if env_path else Path.home() / ".matilda" / "config.toml"
 
         self.config_file = Path(config_file)
+        self.config_file.parent.mkdir(parents=True, exist_ok=True)
         self.config = self._load_config()
 
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from file."""
         if self.config_file.exists():
             try:
-                with open(self.config_file, 'r') as f:
-                    return yaml.safe_load(f) or {}
+                with open(self.config_file, "rb") as f:
+                    full_config = tomllib.load(f)
+                section = full_config.get(self.section)
+                if isinstance(section, dict):
+                    return section
+                return {}
             except Exception as e:
                 logger.warning(f"Failed to load config: {e}")
                 return {}
@@ -96,8 +107,15 @@ class ConfigManager:
     def save_config(self) -> bool:
         """Save configuration to file."""
         try:
-            with open(self.config_file, 'w') as f:
-                yaml.safe_dump(self.config, f, default_flow_style=False)
+            if self.config_file.exists():
+                with open(self.config_file, "rb") as f:
+                    full_config = tomllib.load(f)
+            else:
+                full_config = {}
+
+            full_config[self.section] = self.config
+            with open(self.config_file, "w", encoding="utf-8") as f:
+                f.write(toml.dumps(full_config))
             return True
         except Exception as e:
             logger.error(f"Failed to save config: {e}")
@@ -105,7 +123,7 @@ class ConfigManager:
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get configuration value."""
-        keys = key.split('.')
+        keys = key.split(".")
         value = self.config
         for k in keys:
             if isinstance(value, dict):
@@ -118,7 +136,7 @@ class ConfigManager:
 
     def set(self, key: str, value: Any):
         """Set configuration value."""
-        keys = key.split('.')
+        keys = key.split(".")
         config = self.config
         for k in keys[:-1]:
             if k not in config:
@@ -201,7 +219,7 @@ hooks = load_hooks()
 @click.group()
 @click.option('--verbose', '-v', is_flag=True, help='Enable verbose output')
 @click.option('--debug', is_flag=True, help='Enable debug output')
-@click.option('--config', type=click.Path(), help='Path to config file')
+@click.option('--config', type=click.Path(), help='Path to config file (default: ~/.matilda/config.toml)')
 @click.pass_context
 def cli(ctx, verbose, debug, config):
     """Convert text into natural speech with AI-powered auto-selection and real-time streaming."""
@@ -212,9 +230,9 @@ def cli(ctx, verbose, debug, config):
 @cli.command('speak')
 @click.argument('text', type=click.STRING, required=False, default=None)
 @click.argument('options', type=click.STRING, nargs=-1, default=None)
-@click.option('--voice', '-v', default=None,              help="🎤 Voice selection (e.g., en-GB-SoniaNeural for edge_tts)")
-@click.option('--rate', default=None,              help="⚡ Speech rate adjustment (e.g., +20%, -50%, 150%)")
-@click.option('--pitch', default=None,              help="🎵 Pitch adjustment (e.g., +5Hz, -10Hz)")
+@click.option('--voice', '-v', type=click.STRING, default=None,              help="🎤 Voice selection (e.g., en-GB-SoniaNeural for edge_tts)")
+@click.option('--rate', type=click.STRING, default=None,              help="⚡ Speech rate adjustment (e.g., +20%, -50%, 150%)")
+@click.option('--pitch', type=click.STRING, default=None,              help="🎵 Pitch adjustment (e.g., +5Hz, -10Hz)")
 @click.option('--debug', is_flag=True, default=None,              help="🐞 Display debug information during processing")
 @click.option('--ssml', is_flag=True, default=None,              help="📝 Enable SSML markup processing (e.g., [1s] for pauses, **bold** for emphasis)")
 @click.pass_obj
@@ -225,20 +243,20 @@ def speak(ctx, text, options, voice, rate, pitch, debug, ssml):
             kwargs = {                'text': text,                'options': options,                'voice': voice,                'rate': rate,                'pitch': pitch,                'debug': debug,                'ssml': ssml,            }
             hooks.on_speak(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_speak' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_speak' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('save')
 @click.argument('text', type=click.STRING, required=False, default=None)
 @click.argument('options', type=click.STRING, nargs=-1, default=None)
-@click.option('--output', '-o', default=None,              help="💾 Output file path")
-@click.option('--format', '-f', default=None,              help="🔧 Audio output format")
-@click.option('--voice', '-v', default=None,              help="🎤 Voice selection (e.g., en-GB-SoniaNeural for edge_tts)")
+@click.option('--output', '-o', type=click.STRING, default=None,              help="💾 Output file path")
+@click.option('--format', '-f', type=click.STRING, default=None,              help="🔧 Audio output format")
+@click.option('--voice', '-v', type=click.STRING, default=None,              help="🎤 Voice selection (e.g., en-GB-SoniaNeural for edge_tts)")
 @click.option('--json', is_flag=True, default=None,              help="🔧 Output results as JSON")
 @click.option('--debug', is_flag=True, default=None,              help="🐞 Display debug information during processing")
-@click.option('--rate', default=None,              help="⚡ Speech rate adjustment (e.g., +20%, -50%, 150%)")
-@click.option('--pitch', default=None,              help="🎵 Pitch adjustment (e.g., +5Hz, -10Hz)")
+@click.option('--rate', type=click.STRING, default=None,              help="⚡ Speech rate adjustment (e.g., +20%, -50%, 150%)")
+@click.option('--pitch', type=click.STRING, default=None,              help="🎵 Pitch adjustment (e.g., +5Hz, -10Hz)")
 @click.option('--ssml', is_flag=True, default=None,              help="📝 Enable SSML markup processing (e.g., [1s] for pauses, **bold** for emphasis)")
 @click.pass_obj
 def save(ctx, text, options, output, format, voice, json, debug, rate, pitch, ssml):
@@ -248,7 +266,7 @@ def save(ctx, text, options, output, format, voice, json, debug, rate, pitch, ss
             kwargs = {                'text': text,                'options': options,                'output': output,                'format': format,                'voice': voice,                'json': json,                'debug': debug,                'rate': rate,                'pitch': pitch,                'ssml': ssml,            }
             hooks.on_save(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_save' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_save' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -262,7 +280,7 @@ def voices(ctx, args):
             kwargs = {                'args': args,            }
             hooks.on_voices(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_voices' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_voices' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -276,7 +294,7 @@ def providers(ctx, provider_name):
             kwargs = {                'provider_name': provider_name,            }
             hooks.on_providers(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_providers' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_providers' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -290,7 +308,7 @@ def install(ctx, args):
             kwargs = {                'args': args,            }
             hooks.on_install(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_install' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_install' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -304,7 +322,7 @@ def info(ctx, provider):
             kwargs = {                'provider': provider,            }
             hooks.on_info(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_info' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_info' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -312,16 +330,16 @@ def info(ctx, provider):
 @click.argument('document_path', type=click.STRING, default=None)
 @click.argument('options', type=click.STRING, nargs=-1, default=None)
 @click.option('--save', is_flag=True, default=None,              help="💾 Save audio output to file")
-@click.option('--output', '-o', default=None,              help="📁 Output file path")
-@click.option('--format', '-f', default=None,              help="🔧 Audio output format")
-@click.option('--voice', '-v', default=None,              help="🎤 Voice to use")
+@click.option('--output', '-o', type=click.STRING, default=None,              help="📁 Output file path")
+@click.option('--format', '-f', type=click.STRING, default=None,              help="🔧 Audio output format")
+@click.option('--voice', '-v', type=click.STRING, default=None,              help="🎤 Voice to use")
 @click.option('--json', is_flag=True, default=None,              help="🔧 Output results as JSON")
 @click.option('--debug', is_flag=True, default=None,              help="🐞 Display debug information during processing")
-@click.option('--doc-format', default='auto',              help="📄 Input document format")
-@click.option('--ssml-platform', default='generic',              help="🏧️ SSML format platform")
-@click.option('--emotion-profile', default='auto',              help="🎭 Speech emotion style")
-@click.option('--rate', default=None,              help="⚡ Speech rate adjustment")
-@click.option('--pitch', default=None,              help="🎵 Pitch adjustment")
+@click.option('--doc-format', type=click.STRING, default='auto',              help="📄 Input document format")
+@click.option('--ssml-platform', type=click.STRING, default='generic',              help="🏧️ SSML format platform")
+@click.option('--emotion-profile', type=click.STRING, default='auto',              help="🎭 Speech emotion style")
+@click.option('--rate', type=click.STRING, default=None,              help="⚡ Speech rate adjustment")
+@click.option('--pitch', type=click.STRING, default=None,              help="🎵 Pitch adjustment")
 @click.pass_obj
 def document(ctx, document_path, options, save, output, format, voice, json, debug, doc_format, ssml_platform, emotion_profile, rate, pitch):
     """Convert documents to speech"""
@@ -330,7 +348,7 @@ def document(ctx, document_path, options, save, output, format, voice, json, deb
             kwargs = {                'document_path': document_path,                'options': options,                'save': save,                'output': output,                'format': format,                'voice': voice,                'json': json,                'debug': debug,                'doc_format': doc_format,                'ssml_platform': ssml_platform,                'emotion_profile': emotion_profile,                'rate': rate,                'pitch': pitch,            }
             hooks.on_document(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_document' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_document' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -349,7 +367,7 @@ def voice_load(ctx, voice_files):
             kwargs = {                'voice_files': voice_files,            }
             hooks.on_load(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_load' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_load' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -365,7 +383,7 @@ def voice_unload(ctx, voice_files, all):
             kwargs = {                'voice_files': voice_files,                'all': all,            }
             hooks.on_unload(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_unload' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_unload' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -379,7 +397,7 @@ def voice_status(ctx):
             kwargs = {            }
             hooks.on_status(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_status' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_status' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -392,7 +410,7 @@ def status(ctx):
             kwargs = {            }
             hooks.on_status(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_status' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_status' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -408,7 +426,7 @@ def config(ctx, action, key, value):
             kwargs = {                'action': action,                'key': key,                'value': value,            }
             hooks.on_config(ctx=ctx, **kwargs)
         else:
-            logger.error(f"Hook 'on_config' not implemented in cli_hooks.py")
+            logger.error("Hook 'on_config' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
