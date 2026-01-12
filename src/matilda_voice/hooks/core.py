@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 
 from .utils import (
     PROVIDER_SHORTCUTS,
+    exit_with_message,
     get_engine,
     parse_provider_shortcuts,
 )
@@ -40,9 +41,15 @@ def on_speak(
             # Handle invalid shortcuts
             if provider_name and provider_name.startswith("@"):
                 shortcut = provider_name[1:]
-                print(f"Error: Unknown provider shortcut '@{shortcut}'", file=sys.stderr)
-                print(f"Available providers: {', '.join('@' + k for k in PROVIDER_SHORTCUTS.keys())}", file=sys.stderr)
-                raise ValueError(f"Unknown provider shortcut '@{shortcut}'")
+                exit_with_message(
+                    "\n".join(
+                        [
+                            f"Error: Unknown provider shortcut '@{shortcut}'",
+                            f"Available providers: {', '.join('@' + k for k in PROVIDER_SHORTCUTS.keys())}",
+                        ]
+                    ),
+                    exit_code=1,
+                )
             all_args = remaining_args
 
         # Parse any additional text from remaining arguments
@@ -62,7 +69,7 @@ def on_speak(
 
         if not all_text:
             print("Error: No text provided to speak")
-            return 1
+            raise SystemExit(1)
 
         final_text = " ".join(all_text)
 
@@ -148,17 +155,22 @@ def on_save(
             # Handle invalid shortcuts
             if provider_name and provider_name.startswith("@"):
                 shortcut = provider_name[1:]
-                print(f"Error: Unknown provider shortcut '@{shortcut}'", file=sys.stderr)
-                print(f"Available providers: {', '.join('@' + k for k in PROVIDER_SHORTCUTS.keys())}", file=sys.stderr)
-                raise ValueError(f"Unknown provider shortcut '@{shortcut}'")
+                exit_with_message(
+                    "\n".join(
+                        [
+                            f"Error: Unknown provider shortcut '@{shortcut}'",
+                            f"Available providers: {', '.join('@' + k for k in PROVIDER_SHORTCUTS.keys())}",
+                        ]
+                    ),
+                    exit_code=1,
+                )
             all_args = remaining_args
 
         # Parse any additional text from remaining arguments
         all_text = all_args
 
         if not all_text:
-            print("Error: No text provided to save")
-            return 1
+            exit_with_message("Error: No text provided to save", exit_code=2, show_usage=True)
 
         final_text = " ".join(all_text)
 

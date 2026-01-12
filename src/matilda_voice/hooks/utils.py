@@ -3,6 +3,8 @@
 
 from typing import Any, Optional
 
+import click
+
 from matilda_voice.core import get_tts_engine
 from matilda_voice.registry import PROVIDERS_REGISTRY, PROVIDER_SHORTCUTS
 
@@ -59,3 +61,15 @@ def get_engine() -> Any:
         from matilda_voice.core import initialize_tts_engine
 
         return initialize_tts_engine(PROVIDERS_REGISTRY)
+
+
+def exit_with_message(message: str, exit_code: int = 1, show_usage: bool = False) -> None:
+    if message:
+        print(message)
+    if show_usage:
+        ctx = click.get_current_context(silent=True)
+        if ctx:
+            click.echo(ctx.get_help())
+        else:
+            print("Usage:")
+    raise SystemExit(exit_code)

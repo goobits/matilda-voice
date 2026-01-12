@@ -7,6 +7,7 @@ from typing import Optional
 from .utils import (
     PROVIDER_SHORTCUTS,
     PROVIDERS_REGISTRY,
+    exit_with_message,
     get_engine,
     handle_provider_shortcuts,
 )
@@ -191,9 +192,15 @@ def on_info(provider: Optional[str], **kwargs) -> int:
 
             if resolved_provider and resolved_provider.startswith("@"):
                 shortcut = resolved_provider[1:]
-                print(f"Error: Unknown provider shortcut '@{shortcut}'", file=sys.stderr)
-                print(f"Available providers: {', '.join('@' + k for k in PROVIDER_SHORTCUTS.keys())}", file=sys.stderr)
-                raise ValueError(f"Unknown provider shortcut '@{shortcut}'")
+                exit_with_message(
+                    "\n".join(
+                        [
+                            f"Error: Unknown provider shortcut '@{shortcut}'",
+                            f"Available providers: {', '.join('@' + k for k in PROVIDER_SHORTCUTS.keys())}",
+                        ]
+                    ),
+                    exit_code=1,
+                )
 
             provider_name = resolved_provider or provider
 
@@ -310,5 +317,4 @@ def on_info(provider: Optional[str], **kwargs) -> int:
 
         return 0
     except (KeyError, AttributeError, ValueError) as e:
-        print(f"Error in info command: {e}")
-        return 1
+        exit_with_message(f"Error in info command: {e}", exit_code=1)

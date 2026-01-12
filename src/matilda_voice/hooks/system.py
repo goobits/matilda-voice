@@ -5,7 +5,7 @@ from typing import Optional
 
 from matilda_voice.i18n import t, t_common
 
-from .utils import get_engine
+from .utils import exit_with_message, get_engine
 
 
 def _get_config_functions():
@@ -117,16 +117,21 @@ def on_config(action: Optional[str], key: Optional[str], value: Optional[str], *
             for k, v in config.items():
                 if k != "config_path":  # Skip internal keys
                     print(f"  {k}: {v}")
-        elif action == "get" and key:
+        elif action == "get":
+            if not key:
+                exit_with_message("Error: Missing config key", exit_code=2, show_usage=True)
             print(config.get(key, "Not set"))
-        elif action == "set" and key and value:
+        elif action == "set":
+            if not key:
+                exit_with_message("Error: Missing config key", exit_code=2, show_usage=True)
+            if value is None:
+                exit_with_message("Error: Missing config value", exit_code=2, show_usage=True)
             config[key] = value
             save_config(config)
             print(f"Set {key} = {value}")
         else:
-            print("Usage: config [show|get|set] [key] [value]")
+            exit_with_message("Usage: config [show|get|set] [key] [value]", exit_code=2, show_usage=True)
 
         return 0
     except (IOError, OSError, ValueError, KeyError) as e:
-        print(f"Error in config command: {e}")
-        return 1
+        exit_with_message(f"Error in config command: {e}", exit_code=1)

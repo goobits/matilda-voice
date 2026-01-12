@@ -3,7 +3,7 @@
 
 from typing import Any, Dict, Optional
 
-from .utils import get_engine
+from .utils import exit_with_message, get_engine
 
 
 def on_document(
@@ -27,6 +27,9 @@ def on_document(
         from pathlib import Path
 
         from matilda_voice.document_processing.parser_factory import DocumentParserFactory
+
+        if not document_path:
+            exit_with_message("Error: Document path is required", exit_code=2, show_usage=True)
 
         # Check if document file exists
         doc_file = Path(document_path)
