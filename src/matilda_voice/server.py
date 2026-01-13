@@ -130,7 +130,24 @@ async def handle_speak(request: Request) -> Response:
 
         # Run synthesis (this plays audio)
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, lambda: on_speak(text=text, voice=voice, provider=provider))
+        options = ()
+        text_arg = text
+        if provider:
+            shortcut = provider if provider.startswith("@") else f"@{provider}"
+            options = (shortcut, text)
+            text_arg = None
+        await loop.run_in_executor(
+            None,
+            lambda: on_speak(
+                text=text_arg,
+                options=options,
+                voice=voice,
+                rate=None,
+                pitch=None,
+                debug=False,
+                ssml=False,
+            ),
+        )
 
         result = {
             "success": True,
@@ -187,14 +204,25 @@ async def handle_synthesize(request: Request) -> Response:
         try:
             # Run synthesis to file
             loop = asyncio.get_event_loop()
+            options = ()
+            text_arg = text
+            if provider:
+                shortcut = provider if provider.startswith("@") else f"@{provider}"
+                options = (shortcut, text)
+                text_arg = None
             await loop.run_in_executor(
                 None,
                 lambda: on_save(
-                    text=text,
+                    text=text_arg,
+                    options=options,
                     output=tmp_path,
                     voice=voice,
-                    provider=provider,
                     format=audio_format,
+                    json=False,
+                    debug=False,
+                    rate=None,
+                    pitch=None,
+                    ssml=False,
                 ),
             )
 
