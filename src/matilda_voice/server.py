@@ -323,6 +323,9 @@ def run_server(host: str = "0.0.0.0", port: int = 8771):
     print()
 
     if transport.transport == "unix" and transport.endpoint:
+        os.makedirs(os.path.dirname(transport.endpoint), exist_ok=True)
+        if os.path.exists(transport.endpoint):
+            os.unlink(transport.endpoint)
         web.run_app(app, path=transport.endpoint, print=None)
         return
     if transport.transport == "pipe":
