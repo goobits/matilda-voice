@@ -25,6 +25,7 @@ from aiohttp.web import Request, Response
 
 from .internal.security import get_allowed_origins
 from .internal.token_storage import get_or_create_token
+from .transport import resolve as resolve_transport
 
 logger = logging.getLogger(__name__)
 
@@ -312,6 +313,7 @@ def create_app() -> web.Application:
 def run_server(host: str = "0.0.0.0", port: int = 8771):
     """Run the HTTP server."""
     app = create_app()
+    transport = resolve_transport("MATILDA_VOICE_TRANSPORT", "MATILDA_VOICE_ENDPOINT", host, port)
 
     print(f"Starting Voice server on http://{host}:{port}")
     print("  POST /speak      - Synthesize and play audio")
@@ -320,7 +322,13 @@ def run_server(host: str = "0.0.0.0", port: int = 8771):
     print("  GET  /health     - Health check")
     print()
 
-    web.run_app(app, host=host, port=port, print=None)
+    if transport.transport == "unix" and transport.endpoint:
+        web.run_app(app, path=transport.endpoint, print=None)
+        return
+    if transport.transport == "pipe":
+        raise RuntimeError("pipe transport is not supported for Voice yet")
+
+    web.run_app(app, host=transport.host, port=transport.port, print=None)
 
 
 def main():
