@@ -327,7 +327,17 @@ def run_server(host: str = "0.0.0.0", port: int = 8771):
         web.run_app(app, path=transport.endpoint, print=None)
         return
     if transport.transport == "pipe":
-        raise RuntimeError("pipe transport is not supported for Voice yet")
+        if os.name != "nt":
+            raise RuntimeError("pipe transport is only supported on Windows")
+        async def run_pipe():
+            runner = web.AppRunner(app)
+            await runner.setup()
+            site = web.NamedPipeSite(runner, transport.endpoint)
+            await site.start()
+            await asyncio.Event().wait()
+
+        asyncio.run(run_pipe())
+        return
 
     web.run_app(app, host=transport.host, port=transport.port, print=None)
 
