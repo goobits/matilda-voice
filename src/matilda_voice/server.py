@@ -85,6 +85,17 @@ def add_cors_headers(response: Response, request: Request = None) -> Response:
     return response
 
 
+def ok_response(payload: dict, request: Request) -> Response:
+    return add_cors_headers(web.json_response({"status": "ok", "result": payload}), request)
+
+
+def error_response(message: str, request: Request, status: int = 400, code: str = "bad_request") -> Response:
+    return add_cors_headers(
+        web.json_response({"status": "error", "error": {"message": message, "code": code}}, status=status),
+        request,
+    )
+
+
 async def handle_options(request: Request) -> Response:
     """Handle CORS preflight requests."""
     return add_cors_headers(Response(status=200), request)
@@ -116,11 +127,11 @@ async def handle_speak(request: Request) -> Response:
     try:
         data = await request.json()
     except json.JSONDecodeError:
-        return add_cors_headers(web.json_response({"error": "Invalid JSON"}, status=400), request)
+        return error_response("Invalid JSON", request)
 
     text = data.get("text")
     if not text:
-        return add_cors_headers(web.json_response({"error": "Missing 'text' field"}, status=400), request)
+        return error_response("Missing 'text' field", request)
 
     voice = data.get("voice")
     provider = data.get("provider")
@@ -151,15 +162,14 @@ async def handle_speak(request: Request) -> Response:
         )
 
         result = {
-            "success": True,
             "text": text,
             "voice": voice,
         }
-        return add_cors_headers(web.json_response(result), request)
+        return ok_response(result, request)
 
     except Exception as e:
         logger.exception("Failed to handle speak request")
-        return add_cors_headers(web.json_response({"error": str(e)}, status=500), request)
+        return error_response(str(e), request, status=500, code="internal_error")
 
 
 async def handle_synthesize(request: Request) -> Response:
@@ -185,11 +195,11 @@ async def handle_synthesize(request: Request) -> Response:
     try:
         data = await request.json()
     except json.JSONDecodeError:
-        return add_cors_headers(web.json_response({"error": "Invalid JSON"}, status=400), request)
+        return error_response("Invalid JSON", request)
 
     text = data.get("text")
     if not text:
-        return add_cors_headers(web.json_response({"error": "Missing 'text' field"}, status=400), request)
+        return error_response("Missing 'text' field", request)
 
     voice = data.get("voice")
     provider = data.get("provider")
@@ -233,13 +243,12 @@ async def handle_synthesize(request: Request) -> Response:
             audio_base64 = base64.b64encode(audio_data).decode("utf-8")
 
             result = {
-                "success": True,
                 "audio": audio_base64,
                 "format": audio_format,
                 "text": text,
                 "size_bytes": len(audio_data),
             }
-            return add_cors_headers(web.json_response(result), request)
+            return ok_response(result, request)
 
         finally:
             # Clean up temp file
@@ -248,7 +257,7 @@ async def handle_synthesize(request: Request) -> Response:
 
     except Exception as e:
         logger.exception("Failed to handle synthesize request")
-        return add_cors_headers(web.json_response({"error": str(e)}, status=500), request)
+        return error_response(str(e), request, status=500, code="internal_error")
 
 
 async def handle_providers(request: Request) -> Response:
@@ -266,11 +275,11 @@ async def handle_providers(request: Request) -> Response:
         from .app_hooks import PROVIDERS_REGISTRY
 
         providers = list(PROVIDERS_REGISTRY.keys())
-        return add_cors_headers(web.json_response({"providers": providers}), request)
+        return ok_response({"providers": providers}, request)
 
     except Exception as e:
         logger.exception("Failed to list providers")
-        return add_cors_headers(web.json_response({"error": str(e)}, status=500), request)
+        return error_response(str(e), request, status=500, code="internal_error")
 
 
 async def handle_reload(request: Request) -> Response:
@@ -289,10 +298,10 @@ async def handle_reload(request: Request) -> Response:
         reload_config()
 
         logger.info("Configuration reloaded via API")
-        return add_cors_headers(web.json_response({"status": "ok", "message": "Configuration reloaded"}), request)
+        return ok_response({"message": "Configuration reloaded"}, request)
     except Exception as e:
         logger.exception("Error reloading configuration")
-        return add_cors_headers(web.json_response({"error": str(e)}, status=500), request)
+        return error_response(str(e), request, status=500, code="internal_error")
 
 
 def create_app() -> web.Application:
