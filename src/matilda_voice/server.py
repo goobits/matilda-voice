@@ -25,7 +25,7 @@ from aiohttp.web import Request, Response
 
 from .internal.security import get_allowed_origins
 from .internal.token_storage import get_or_create_token
-from matilda_transport import prepare_unix_socket, resolve_transport
+from matilda_transport import ensure_pipe_supported, prepare_unix_socket, resolve_transport
 
 logger = logging.getLogger(__name__)
 
@@ -327,8 +327,7 @@ def run_server(host: str = "0.0.0.0", port: int = 8771):
         web.run_app(app, path=transport.endpoint, print=None)
         return
     if transport.transport == "pipe":
-        if os.name != "nt":
-            raise RuntimeError("pipe transport is only supported on Windows")
+        ensure_pipe_supported(transport)
         async def run_pipe():
             runner = web.AppRunner(app)
             await runner.setup()
