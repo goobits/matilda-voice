@@ -19,6 +19,9 @@ class EnvelopeBase(BaseModel):
     request_id: str
     service: str
     task: str
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    usage: Optional[object] = None
     result: Optional[object] = None
     error: Optional[ErrorDetail] = None
 

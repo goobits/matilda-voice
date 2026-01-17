@@ -132,11 +132,22 @@ def validate_response(model, payload: dict) -> None:
     model.model_validate(payload)
 
 
-def ok_response(task: str, payload: dict, request: Request, model=None) -> Response:
+def ok_response(
+    task: str,
+    payload: dict,
+    request: Request,
+    model=None,
+    provider: str | None = None,
+    voice_model: str | None = None,
+    usage: dict | None = None,
+) -> Response:
     response_payload = {
         "request_id": str(uuid.uuid4()),
         "service": "voice",
         "task": task,
+        "provider": provider,
+        "model": voice_model,
+        "usage": usage,
         "result": payload,
     }
     if model is not None:
@@ -236,7 +247,7 @@ async def handle_speak(request: Request) -> Response:
             "text": text,
             "voice": voice,
         }
-        return ok_response("speak", result, request, SpeakEnvelope)
+        return ok_response("speak", result, request, SpeakEnvelope, provider=provider)
 
     except Exception as e:
         logger.exception("Failed to handle speak request")
@@ -319,7 +330,7 @@ async def handle_synthesize(request: Request) -> Response:
                 "text": text,
                 "size_bytes": len(audio_data),
             }
-            return ok_response("synthesize", result, request, SynthesizeEnvelope)
+            return ok_response("synthesize", result, request, SynthesizeEnvelope, provider=provider)
 
         finally:
             # Clean up temp file
