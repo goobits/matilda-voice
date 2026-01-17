@@ -19,6 +19,7 @@ import logging
 import os
 import secrets
 import tempfile
+import uuid
 
 from aiohttp import web
 from aiohttp.web import Request, Response
@@ -28,11 +29,11 @@ from matilda_transport import ensure_pipe_supported, prepare_unix_socket, resolv
 from .internal.security import get_allowed_origins
 from .internal.token_storage import get_or_create_token
 from .schemas.responses import (
-    ErrorResponse,
-    ProvidersResponse,
-    ReloadResponse,
-    SpeakResponse,
-    SynthesizeResponse,
+    ErrorEnvelope,
+    ProvidersEnvelope,
+    ReloadEnvelope,
+    SpeakEnvelope,
+    SynthesizeEnvelope,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,12 +57,40 @@ async def auth_middleware(request: Request, handler):
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return add_cors_headers(
-            web.json_response({"error": "Unauthorized: Missing or invalid Authorization header"}, status=401), request
+            web.json_response(
+                {
+                    "request_id": str(uuid.uuid4()),
+                    "service": "voice",
+                    "task": "auth",
+                    "error": {
+                        "message": "Unauthorized: Missing or invalid Authorization header",
+                        "code": "unauthorized",
+                        "retryable": False,
+                    },
+                },
+                status=401,
+            ),
+            request,
         )
 
     token = auth_header.split(" ")[1]
     if not secrets.compare_digest(token, API_TOKEN):
-        return add_cors_headers(web.json_response({"error": "Forbidden: Invalid token"}, status=403), request)
+        return add_cors_headers(
+            web.json_response(
+                {
+                    "request_id": str(uuid.uuid4()),
+                    "service": "voice",
+                    "task": "auth",
+                    "error": {
+                        "message": "Forbidden: Invalid token",
+                        "code": "forbidden",
+                        "retryable": False,
+                    },
+                },
+                status=403,
+            ),
+            request,
+        )
 
     return await handler(request)
 
@@ -103,16 +132,32 @@ def validate_response(model, payload: dict) -> None:
     model.model_validate(payload)
 
 
-def ok_response(payload: dict, request: Request, model=None) -> Response:
-    response_payload = {"status": "ok", "result": payload}
+def ok_response(task: str, payload: dict, request: Request, model=None) -> Response:
+    response_payload = {
+        "request_id": str(uuid.uuid4()),
+        "service": "voice",
+        "task": task,
+        "result": payload,
+    }
     if model is not None:
         validate_response(model, response_payload)
     return add_cors_headers(web.json_response(response_payload), request)
 
 
-def error_response(message: str, request: Request, status: int = 400, code: str = "bad_request") -> Response:
-    response_payload = {"status": "error", "error": {"message": message, "code": code}}
-    validate_response(ErrorResponse, response_payload)
+def error_response(
+    message: str,
+    request: Request,
+    status: int = 400,
+    code: str = "bad_request",
+    task: str = "unknown",
+) -> Response:
+    response_payload = {
+        "request_id": str(uuid.uuid4()),
+        "service": "voice",
+        "task": task,
+        "error": {"message": message, "code": code, "retryable": status >= 500},
+    }
+    validate_response(ErrorEnvelope, response_payload)
     return add_cors_headers(web.json_response(response_payload, status=status), request)
 
 
@@ -123,7 +168,13 @@ async def handle_options(request: Request) -> Response:
 
 async def handle_health(request: Request) -> Response:
     """Health check endpoint."""
-    return add_cors_headers(web.json_response({"status": "ok", "service": "voice"}), request)
+    response_payload = {
+        "request_id": str(uuid.uuid4()),
+        "service": "voice",
+        "task": "health",
+        "result": {"status": "ok", "service": "voice"},
+    }
+    return add_cors_headers(web.json_response(response_payload), request)
 
 
 async def handle_speak(request: Request) -> Response:
@@ -147,11 +198,11 @@ async def handle_speak(request: Request) -> Response:
     try:
         data = await request.json()
     except json.JSONDecodeError:
-        return error_response("Invalid JSON", request)
+        return error_response("Invalid JSON", request, task="speak")
 
     text = data.get("text")
     if not text:
-        return error_response("Missing 'text' field", request)
+        return error_response("Missing 'text' field", request, task="speak")
 
     voice = data.get("voice")
     provider = data.get("provider")
@@ -185,11 +236,11 @@ async def handle_speak(request: Request) -> Response:
             "text": text,
             "voice": voice,
         }
-        return ok_response(result, request, SpeakResponse)
+        return ok_response("speak", result, request, SpeakEnvelope)
 
     except Exception as e:
         logger.exception("Failed to handle speak request")
-        return error_response(str(e), request, status=500, code="internal_error")
+        return error_response(str(e), request, status=500, code="internal_error", task="speak")
 
 
 async def handle_synthesize(request: Request) -> Response:
@@ -215,11 +266,11 @@ async def handle_synthesize(request: Request) -> Response:
     try:
         data = await request.json()
     except json.JSONDecodeError:
-        return error_response("Invalid JSON", request)
+        return error_response("Invalid JSON", request, task="synthesize")
 
     text = data.get("text")
     if not text:
-        return error_response("Missing 'text' field", request)
+        return error_response("Missing 'text' field", request, task="synthesize")
 
     voice = data.get("voice")
     provider = data.get("provider")
@@ -268,7 +319,7 @@ async def handle_synthesize(request: Request) -> Response:
                 "text": text,
                 "size_bytes": len(audio_data),
             }
-            return ok_response(result, request, SynthesizeResponse)
+            return ok_response("synthesize", result, request, SynthesizeEnvelope)
 
         finally:
             # Clean up temp file
@@ -277,7 +328,7 @@ async def handle_synthesize(request: Request) -> Response:
 
     except Exception as e:
         logger.exception("Failed to handle synthesize request")
-        return error_response(str(e), request, status=500, code="internal_error")
+        return error_response(str(e), request, status=500, code="internal_error", task="synthesize")
 
 
 async def handle_providers(request: Request) -> Response:
@@ -295,11 +346,11 @@ async def handle_providers(request: Request) -> Response:
         from .app_hooks import PROVIDERS_REGISTRY
 
         providers = list(PROVIDERS_REGISTRY.keys())
-        return ok_response({"providers": providers}, request, ProvidersResponse)
+        return ok_response("providers", {"providers": providers}, request, ProvidersEnvelope)
 
     except Exception as e:
         logger.exception("Failed to list providers")
-        return error_response(str(e), request, status=500, code="internal_error")
+        return error_response(str(e), request, status=500, code="internal_error", task="providers")
 
 
 async def handle_reload(request: Request) -> Response:
@@ -318,10 +369,10 @@ async def handle_reload(request: Request) -> Response:
         reload_config()
 
         logger.info("Configuration reloaded via API")
-        return ok_response({"message": "Configuration reloaded"}, request, ReloadResponse)
+        return ok_response("reload", {"message": "Configuration reloaded"}, request, ReloadEnvelope)
     except Exception as e:
         logger.exception("Error reloading configuration")
-        return error_response(str(e), request, status=500, code="internal_error")
+        return error_response(str(e), request, status=500, code="internal_error", task="reload")
 
 
 def create_app() -> web.Application:

@@ -10,20 +10,17 @@ class ErrorDetail(BaseModel):
 
     message: str
     code: str
+    retryable: bool
 
 
-class ErrorResponse(BaseModel):
+class EnvelopeBase(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    status: str
-    error: ErrorDetail
-
-
-class HealthResponse(BaseModel):
-    model_config = ConfigDict(extra="allow")
-
-    status: str
-    service: Optional[str] = None
+    request_id: str
+    service: str
+    task: str
+    result: Optional[object] = None
+    error: Optional[ErrorDetail] = None
 
 
 class SpeakResult(BaseModel):
@@ -36,7 +33,6 @@ class SpeakResult(BaseModel):
 class SpeakResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    status: str
     result: SpeakResult
 
 
@@ -52,7 +48,6 @@ class SynthesizeResult(BaseModel):
 class SynthesizeResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    status: str
     result: SynthesizeResult
 
 
@@ -65,7 +60,6 @@ class ProvidersResult(BaseModel):
 class ProvidersResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    status: str
     result: ProvidersResult
 
 
@@ -78,5 +72,24 @@ class ReloadResult(BaseModel):
 class ReloadResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    status: str
     result: ReloadResult
+
+
+class SpeakEnvelope(EnvelopeBase):
+    result: SpeakResult
+
+
+class SynthesizeEnvelope(EnvelopeBase):
+    result: SynthesizeResult
+
+
+class ProvidersEnvelope(EnvelopeBase):
+    result: ProvidersResult
+
+
+class ReloadEnvelope(EnvelopeBase):
+    result: ReloadResult
+
+
+class ErrorEnvelope(EnvelopeBase):
+    error: ErrorDetail
