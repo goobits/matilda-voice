@@ -23,9 +23,17 @@ import tempfile
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from matilda_transport import ensure_pipe_supported, prepare_unix_socket, resolve_transport
+
 from .internal.security import get_allowed_origins
 from .internal.token_storage import get_or_create_token
-from matilda_transport import ensure_pipe_supported, prepare_unix_socket, resolve_transport
+from .schemas.responses import (
+    ErrorResponse,
+    ProvidersResponse,
+    ReloadResponse,
+    SpeakResponse,
+    SynthesizeResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,15 +93,27 @@ def add_cors_headers(response: Response, request: Request = None) -> Response:
     return response
 
 
-def ok_response(payload: dict, request: Request) -> Response:
-    return add_cors_headers(web.json_response({"status": "ok", "result": payload}), request)
+def should_validate() -> bool:
+    return os.getenv("MATILDA_SCHEMA_VALIDATE", "").lower() in {"1", "true", "yes", "on"}
+
+
+def validate_response(model, payload: dict) -> None:
+    if not should_validate():
+        return
+    model.model_validate(payload)
+
+
+def ok_response(payload: dict, request: Request, model=None) -> Response:
+    response_payload = {"status": "ok", "result": payload}
+    if model is not None:
+        validate_response(model, response_payload)
+    return add_cors_headers(web.json_response(response_payload), request)
 
 
 def error_response(message: str, request: Request, status: int = 400, code: str = "bad_request") -> Response:
-    return add_cors_headers(
-        web.json_response({"status": "error", "error": {"message": message, "code": code}}, status=status),
-        request,
-    )
+    response_payload = {"status": "error", "error": {"message": message, "code": code}}
+    validate_response(ErrorResponse, response_payload)
+    return add_cors_headers(web.json_response(response_payload, status=status), request)
 
 
 async def handle_options(request: Request) -> Response:
@@ -165,7 +185,7 @@ async def handle_speak(request: Request) -> Response:
             "text": text,
             "voice": voice,
         }
-        return ok_response(result, request)
+        return ok_response(result, request, SpeakResponse)
 
     except Exception as e:
         logger.exception("Failed to handle speak request")
@@ -248,7 +268,7 @@ async def handle_synthesize(request: Request) -> Response:
                 "text": text,
                 "size_bytes": len(audio_data),
             }
-            return ok_response(result, request)
+            return ok_response(result, request, SynthesizeResponse)
 
         finally:
             # Clean up temp file
@@ -275,7 +295,7 @@ async def handle_providers(request: Request) -> Response:
         from .app_hooks import PROVIDERS_REGISTRY
 
         providers = list(PROVIDERS_REGISTRY.keys())
-        return ok_response({"providers": providers}, request)
+        return ok_response({"providers": providers}, request, ProvidersResponse)
 
     except Exception as e:
         logger.exception("Failed to list providers")
@@ -298,7 +318,7 @@ async def handle_reload(request: Request) -> Response:
         reload_config()
 
         logger.info("Configuration reloaded via API")
-        return ok_response({"message": "Configuration reloaded"}, request)
+        return ok_response({"message": "Configuration reloaded"}, request, ReloadResponse)
     except Exception as e:
         logger.exception("Error reloading configuration")
         return error_response(str(e), request, status=500, code="internal_error")
