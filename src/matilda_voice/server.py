@@ -62,6 +62,9 @@ async def auth_middleware(request: Request, handler):
                     "request_id": str(uuid.uuid4()),
                     "service": "voice",
                     "task": "auth",
+                    "provider": None,
+                    "model": None,
+                    "usage": None,
                     "error": {
                         "message": "Unauthorized: Missing or invalid Authorization header",
                         "code": "unauthorized",
@@ -81,6 +84,9 @@ async def auth_middleware(request: Request, handler):
                     "request_id": str(uuid.uuid4()),
                     "service": "voice",
                     "task": "auth",
+                    "provider": None,
+                    "model": None,
+                    "usage": None,
                     "error": {
                         "message": "Forbidden: Invalid token",
                         "code": "forbidden",
@@ -166,6 +172,9 @@ def error_response(
         "request_id": str(uuid.uuid4()),
         "service": "voice",
         "task": task,
+        "provider": None,
+        "model": None,
+        "usage": None,
         "error": {"message": message, "code": code, "retryable": status >= 500},
     }
     validate_response(ErrorEnvelope, response_payload)
@@ -183,6 +192,9 @@ async def handle_health(request: Request) -> Response:
         "request_id": str(uuid.uuid4()),
         "service": "voice",
         "task": "health",
+        "provider": None,
+        "model": None,
+        "usage": None,
         "result": {"status": "ok", "service": "voice"},
     }
     return add_cors_headers(web.json_response(response_payload), request)
