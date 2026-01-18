@@ -213,9 +213,16 @@ async def handle_speak(request: Request) -> Response:
 
     Response:
     {
-        "success": true,
-        "text": "Hello world",
-        "voice": "edge_tts:en-US-AriaNeural"
+        "request_id": "req-123",
+        "service": "voice",
+        "task": "speak",
+        "provider": "edge_tts",
+        "model": "edge_tts:en-US-AriaNeural",
+        "usage": null,
+        "result": {
+            "text": "Hello world",
+            "voice": "edge_tts:en-US-AriaNeural"
+        }
     }
     """
     try:
@@ -280,10 +287,18 @@ async def handle_synthesize(request: Request) -> Response:
 
     Response:
     {
-        "success": true,
-        "audio": "<base64-encoded audio>",
-        "format": "wav",
-        "text": "Hello world"
+        "request_id": "req-123",
+        "service": "voice",
+        "task": "synthesize",
+        "provider": "edge_tts",
+        "model": "edge_tts:en-US-AriaNeural",
+        "usage": null,
+        "result": {
+            "audio": "<base64-encoded audio>",
+            "format": "wav",
+            "text": "Hello world",
+            "size_bytes": 1234
+        }
     }
     """
     try:
@@ -362,7 +377,15 @@ async def handle_providers(request: Request) -> Response:
 
     Response:
     {
-        "providers": ["edge_tts", "openai", "elevenlabs", ...]
+        "request_id": "req-123",
+        "service": "voice",
+        "task": "providers",
+        "provider": null,
+        "model": null,
+        "usage": null,
+        "result": {
+            "providers": ["edge_tts", "openai", "elevenlabs", ...]
+        }
     }
     """
     try:
@@ -383,7 +406,15 @@ async def handle_reload(request: Request) -> Response:
     POST /reload
 
     Response:
-    {"status": "ok", "message": "Configuration reloaded"}
+    {
+        "request_id": "req-123",
+        "service": "voice",
+        "task": "reload",
+        "provider": null,
+        "model": null,
+        "usage": null,
+        "result": {"message": "Configuration reloaded"}
+    }
     """
     try:
         from .internal.config import reload_config
