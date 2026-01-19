@@ -7,6 +7,7 @@ PROVIDERS_REGISTRY = {
     "chatterbox": "matilda_voice.providers.chatterbox",
     "coqui": "matilda_voice.providers.coqui",
     "system": "matilda_voice.providers.system",
+    "hub": "matilda_voice.providers.hub",
 }
 
 PROVIDER_SHORTCUTS = {
@@ -18,4 +19,5 @@ PROVIDER_SHORTCUTS = {
     "chatterbox": "chatterbox",
     "coqui": "coqui",
     "system": "system",
+    "hub": "hub",
 }
