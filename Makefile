@@ -8,7 +8,7 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 test: ## Run all tests
-	@./scripts/test.sh
+	@python3 -m pytest tests/
 
 test-cov: ## Run tests with coverage report
 	@python3 -m pytest tests/ --cov=matilda_voice --cov-report=term-missing --cov-report=html:.artifacts/htmlcov
