@@ -381,7 +381,9 @@ def validate_api_key(provider: str, api_key: str) -> bool:
         )  # Service account JSON string
 
     elif provider == "elevenlabs":
-        # ElevenLabs keys are 32 char hex strings
+        # ElevenLabs keys: either 32-char hex or sk_ prefixed keys
+        if api_key.startswith("sk_"):
+            return len(api_key) >= 32
         elevenlabs_key_length = int(get_config_value("elevenlabs_api_key_length", 32))
         return len(api_key) == elevenlabs_key_length and all(c in "0123456789abcdef" for c in api_key.lower())
 
