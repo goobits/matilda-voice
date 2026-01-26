@@ -4,6 +4,7 @@ import atexit
 import hashlib
 import json
 import logging
+import re
 import threading
 import time
 from pathlib import Path
@@ -14,6 +15,13 @@ from matilda_voice.internal.config import get_config_value
 from matilda_voice.internal.types import SemanticElement, SemanticType
 
 logger = logging.getLogger(__name__)
+
+# Compile regex patterns at module level for performance
+RE_HEADER = re.compile(r"\n\s*#{1,6}\s+.+")
+RE_HTML_HEADER = re.compile(r"<h[1-6][^>]*>", re.IGNORECASE)
+RE_MAJOR_PARAGRAPH_BREAK = re.compile(r"\n\s*\n\s*\n")
+RE_PARAGRAPH_SPLIT = re.compile(r"\n\s*\n")
+RE_SENTENCE_SPLIT = re.compile(r"[.!?]+")
 
 
 def _serialize_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
@@ -432,29 +440,25 @@ class PerformanceOptimizer:
 
     def _find_section_boundaries(self, content: str) -> List[int]:
         """Find natural section boundaries in the document."""
-        import re
-
         boundaries = []
 
         # Look for headers
-        for match in re.finditer(r"\n\s*#{1,6}\s+.+", content):
+        for match in RE_HEADER.finditer(content):
             boundaries.append(match.start())
 
         # Look for HTML headers
-        for match in re.finditer(r"<h[1-6][^>]*>", content, re.IGNORECASE):
+        for match in RE_HTML_HEADER.finditer(content):
             boundaries.append(match.start())
 
         # Look for major paragraph breaks
-        for match in re.finditer(r"\n\s*\n\s*\n", content):
+        for match in RE_MAJOR_PARAGRAPH_BREAK.finditer(content):
             boundaries.append(match.start())
 
         return sorted(set(boundaries))
 
     def _split_by_paragraphs(self, content: str, max_chunk_size: int) -> List[str]:
         """Split content by paragraphs, then sentences if needed."""
-        import re
-
-        paragraphs = re.split(r"\n\s*\n", content)
+        paragraphs = RE_PARAGRAPH_SPLIT.split(content)
         chunks = []
         current_chunk = ""
 
@@ -480,9 +484,7 @@ class PerformanceOptimizer:
 
     def _split_by_sentences(self, text: str, max_chunk_size: int) -> List[str]:
         """Split text by sentences as a last resort."""
-        import re
-
-        sentences = re.split(r"[.!?]+", text)
+        sentences = RE_SENTENCE_SPLIT.split(text)
         chunks = []
         current_chunk = ""
 
