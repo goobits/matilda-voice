@@ -181,6 +181,16 @@ def error_response(
     return add_cors_headers(web.json_response(response_payload, status=status), request)
 
 
+def _read_and_encode_audio(path: str) -> tuple[str, int]:
+    """Read audio file and encode as base64.
+
+    This function is intended to be run in an executor to avoid blocking the event loop.
+    """
+    with open(path, "rb") as f:
+        audio_data = f.read()
+    return base64.b64encode(audio_data).decode("utf-8"), len(audio_data)
+
+
 async def handle_options(request: Request) -> Response:
     """Handle CORS preflight requests."""
     return add_cors_headers(Response(status=200), request)
@@ -347,15 +357,16 @@ async def handle_synthesize(request: Request) -> Response:
             )
 
             # Read audio file and encode as base64
-            with open(tmp_path, "rb") as f:
-                audio_data = f.read()
-            audio_base64 = base64.b64encode(audio_data).decode("utf-8")
+            # Run in executor to avoid blocking the event loop with file I/O
+            audio_base64, size_bytes = await loop.run_in_executor(
+                None, _read_and_encode_audio, tmp_path
+            )
 
             result = {
                 "audio": audio_base64,
                 "format": audio_format,
                 "text": text,
-                "size_bytes": len(audio_data),
+                "size_bytes": size_bytes,
             }
             return ok_response("synthesize", result, request, SynthesizeEnvelope, provider=provider)
 
