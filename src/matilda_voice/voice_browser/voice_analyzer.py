@@ -7,6 +7,43 @@ quality, region, and gender information.
 import re
 from typing import Tuple
 
+# Gender detection constants
+_FEMALE_INDICATORS = [
+    "emily",
+    "jenny",
+    "aria",
+    "davis",
+    "jane",
+    "sarah",
+    "amy",
+    "emma",
+    "female",
+    "woman",
+    "libby",
+    "clara",
+    "natasha",
+]
+
+_MALE_INDICATORS = [
+    "guy",
+    "tony",
+    "brandon",
+    "christopher",
+    "eric",
+    "male",
+    "man",
+    "boy"
+]
+
+# Words that commonly appear in other words and need boundary checks
+_PROBLEMATIC_WORDS = {"man", "eric"}
+
+# Pre-compiled regexes for problematic words
+_PROBLEMATIC_REGEXES = {
+    word: re.compile(r"\b" + re.escape(word) + r"\b")
+    for word in _PROBLEMATIC_WORDS
+}
+
 
 def analyze_voice(provider: str, voice: str) -> Tuple[int, str, str]:
     """Analyze a voice name to extract quality, region, and gender information.
@@ -49,31 +86,14 @@ def analyze_voice(provider: str, voice: str) -> Tuple[int, str, str]:
 
     # Gender detection
     gender = "U"  # Unknown
-    female_indicators = [
-        "emily",
-        "jenny",
-        "aria",
-        "davis",
-        "jane",
-        "sarah",
-        "amy",
-        "emma",
-        "female",
-        "woman",
-        "libby",
-        "clara",
-        "natasha",
-    ]
-    male_indicators = ["guy", "tony", "brandon", "christopher", "eric", "male", "man", "boy"]
 
     # Check for gender indicators with smart boundary detection
     # Use word boundaries for problematic short words, partial matches for names
-    problematic_words = ["man", "eric"]  # Words that commonly appear in other words
 
-    for indicator in female_indicators:
-        if indicator in problematic_words:
+    for indicator in _FEMALE_INDICATORS:
+        if indicator in _PROBLEMATIC_WORDS:
             # Use word boundaries for problematic words
-            if re.search(r"\b" + re.escape(indicator) + r"\b", voice_lower):
+            if _PROBLEMATIC_REGEXES[indicator].search(voice_lower):
                 gender = "F"
                 break
         else:
@@ -83,10 +103,10 @@ def analyze_voice(provider: str, voice: str) -> Tuple[int, str, str]:
                 break
 
     if gender == "U":  # Only check male if not already female
-        for indicator in male_indicators:
-            if indicator in problematic_words:
+        for indicator in _MALE_INDICATORS:
+            if indicator in _PROBLEMATIC_WORDS:
                 # Use word boundaries for problematic words
-                if re.search(r"\b" + re.escape(indicator) + r"\b", voice_lower):
+                if _PROBLEMATIC_REGEXES[indicator].search(voice_lower):
                     gender = "M"
                     break
             else:
