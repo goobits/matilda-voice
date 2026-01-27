@@ -5,7 +5,7 @@ quality, region, and gender information.
 """
 
 import re
-from typing import Tuple
+from typing import List, Set, Tuple
 
 # Gender detection constants
 _FEMALE_INDICATORS = [
@@ -38,22 +38,32 @@ _MALE_INDICATORS = [
 # Words that commonly appear in other words and need boundary checks
 _PROBLEMATIC_WORDS = {"man", "eric"}
 
-# Pre-compiled regexes for problematic words
-_PROBLEMATIC_REGEXES = {}
-for word in _PROBLEMATIC_WORDS:
-    if word == "eric":
-        # Allow "eric" at start of word, but don't require end boundary to match "ericneural"
-        # However, we must ensure it doesn't match inside words like "generic" or "american"
-        # \b ensures start boundary.
-        _PROBLEMATIC_REGEXES[word] = re.compile(r"\b" + re.escape(word))
-    else:
-        _PROBLEMATIC_REGEXES[word] = re.compile(r"\b" + re.escape(word) + r"\b")
 
-# Split indicators for performance optimization
-_FEMALE_SIMPLE = [i for i in _FEMALE_INDICATORS if i not in _PROBLEMATIC_WORDS]
-_FEMALE_REGEX = [i for i in _FEMALE_INDICATORS if i in _PROBLEMATIC_WORDS]
-_MALE_SIMPLE = [i for i in _MALE_INDICATORS if i not in _PROBLEMATIC_WORDS]
-_MALE_REGEX = [i for i in _MALE_INDICATORS if i in _PROBLEMATIC_WORDS]
+def _build_indicator_regex(indicators: List[str], problematic_words: Set[str]) -> re.Pattern:
+    """Build a combined regex pattern for indicators.
+
+    Handles simple substrings and problematic words with boundaries.
+    """
+    parts = []
+    for indicator in indicators:
+        if indicator == "eric":
+            # Allow "eric" at start of word, but don't require end boundary to match "ericneural"
+            # However, we must ensure it doesn't match inside words like "generic" or "american"
+            # \b ensures start boundary.
+            parts.append(r"\b" + re.escape(indicator))
+        elif indicator in problematic_words:
+            # Use word boundaries for problematic words
+            parts.append(r"\b" + re.escape(indicator) + r"\b")
+        else:
+            # Simple substring match
+            parts.append(re.escape(indicator))
+
+    return re.compile("|".join(parts))
+
+
+# Pre-compiled combined patterns for performance
+_FEMALE_PATTERN = _build_indicator_regex(_FEMALE_INDICATORS, _PROBLEMATIC_WORDS)
+_MALE_PATTERN = _build_indicator_regex(_MALE_INDICATORS, _PROBLEMATIC_WORDS)
 
 
 def analyze_voice(provider: str, voice: str) -> Tuple[int, str, str]:
@@ -98,32 +108,11 @@ def analyze_voice(provider: str, voice: str) -> Tuple[int, str, str]:
     # Gender detection
     gender = "U"  # Unknown
 
-    # Check for gender indicators with smart boundary detection
-    # Use word boundaries for problematic short words, partial matches for names
-
-    # Check female indicators
-    for indicator in _FEMALE_SIMPLE:
-        if indicator in voice_lower:
-            gender = "F"
-            break
-
-    if gender == "U" and _FEMALE_REGEX:
-        for indicator in _FEMALE_REGEX:
-            if _PROBLEMATIC_REGEXES[indicator].search(voice_lower):
-                gender = "F"
-                break
-
-    if gender == "U":  # Only check male if not already female
-        for indicator in _MALE_SIMPLE:
-            if indicator in voice_lower:
-                gender = "M"
-                break
-
-        if gender == "U":
-            for indicator in _MALE_REGEX:
-                if _PROBLEMATIC_REGEXES[indicator].search(voice_lower):
-                    gender = "M"
-                    break
+    # Check for gender indicators using optimized regex patterns
+    if _FEMALE_PATTERN.search(voice_lower):
+        gender = "F"
+    elif _MALE_PATTERN.search(voice_lower):
+        gender = "M"
 
     return quality, region, gender
 
