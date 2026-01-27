@@ -460,25 +460,33 @@ class PerformanceOptimizer:
         """Split content by paragraphs, then sentences if needed."""
         paragraphs = RE_PARAGRAPH_SPLIT.split(content)
         chunks = []
-        current_chunk = ""
+        current_chunk_parts: List[str] = []
+        current_chunk_len = 0
 
         for paragraph in paragraphs:
-            if len(current_chunk) + len(paragraph) <= max_chunk_size:
-                current_chunk += paragraph + "\n\n"
+            # Calculate length added: paragraph length + 2 for "\n\n" separator (if not first)
+            added_len = len(paragraph) + (2 if current_chunk_parts else 0)
+
+            if current_chunk_len + added_len <= max_chunk_size:
+                current_chunk_parts.append(paragraph)
+                current_chunk_len += added_len
             else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
+                if current_chunk_parts:
+                    chunks.append("\n\n".join(current_chunk_parts))
+
+                current_chunk_parts = []
+                current_chunk_len = 0
 
                 # If single paragraph is too large, split by sentences
                 if len(paragraph) > max_chunk_size:
                     sentence_chunks = self._split_by_sentences(paragraph, max_chunk_size)
                     chunks.extend(sentence_chunks)
-                    current_chunk = ""
                 else:
-                    current_chunk = paragraph + "\n\n"
+                    current_chunk_parts.append(paragraph)
+                    current_chunk_len = len(paragraph)
 
-        if current_chunk:
-            chunks.append(current_chunk.strip())
+        if current_chunk_parts:
+            chunks.append("\n\n".join(current_chunk_parts))
 
         return chunks
 

@@ -9,6 +9,13 @@ from matilda_voice.internal.types import SemanticElement
 
 # TextFormatter removed - not needed for document processing
 
+# Compiled regex patterns for performance
+RE_SENTENCE_SPLIT = re.compile(r"[.!?]+")
+RE_HTML_LINK = re.compile(r"<a\s+href")
+RE_ANY_HTML_TAG = re.compile(r"<[^>]+>")
+RE_MD_HEADER = re.compile(r"#{1,6}\s+")
+RE_SPEECH_ARTIFACTS = re.compile(r"\b(?:um|uh|ah|er)\b", re.IGNORECASE)
+
 
 class MixedContentProcessor:
     """Process mixed content: documents + transcribed text."""
@@ -135,7 +142,7 @@ class MixedContentProcessor:
             doc_score += 4
 
         # Incomplete sentences heuristic (common in speech)
-        sentences = re.split(r"[.!?]+", content)
+        sentences = RE_SENTENCE_SPLIT.split(content)
         short_sentences = sum(1 for s in sentences if len(s.split()) <= 3 and len(s.strip()) > 0)
         if short_sentences >= 2:
             trans_score += short_sentences
@@ -188,7 +195,7 @@ class MixedContentProcessor:
 
         # Word and sentence statistics
         words = len(content.split())
-        sentences = len(re.split(r"[.!?]+", content))
+        sentences = len(RE_SENTENCE_SPLIT.split(content))
         avg_sentence_length = words / max(sentences, 1)
 
         # Structure analysis using single-pass scanning
@@ -211,7 +218,7 @@ class MixedContentProcessor:
         )
         has_code = structure_matches.get("code_pre", False) or structure_matches.get("code_block", False)
         has_lists = structure_matches.get("list_item", False) or structure_matches.get("num_list", False)
-        has_links = structure_matches.get("md_link", False) or bool(re.search(r"<a\s+href", content))
+        has_links = structure_matches.get("md_link", False) or bool(RE_HTML_LINK.search(content))
 
         return {
             "detected_type": content_type,
@@ -255,9 +262,9 @@ class MixedContentProcessor:
 
         # Add specific recommendations
         if content_type == "document":
-            if re.search(r"<[^>]+>", content):
+            if RE_ANY_HTML_TAG.search(content):
                 suggestions.append("Use HTML parser for best results")
-            elif re.search(r"#{1,6}\s+", content):
+            elif RE_MD_HEADER.search(content):
                 suggestions.append("Use Markdown parser for best results")
             elif content.strip().startswith("{"):
                 suggestions.append("Use JSON parser for best results")
@@ -265,7 +272,7 @@ class MixedContentProcessor:
         elif content_type == "transcription":
             if len(content.split()) > 50:
                 suggestions.append("Consider breaking into smaller chunks")
-            if re.search(r"\b(?:um|uh|ah|er)\b", content.lower()):
+            if RE_SPEECH_ARTIFACTS.search(content):
                 suggestions.append("Speech artifacts detected - will be cleaned")
 
         return recommendations
