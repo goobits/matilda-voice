@@ -20,6 +20,7 @@ import os
 import secrets
 import tempfile
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 from aiohttp import web
 from aiohttp.web import Request, Response
@@ -36,6 +37,10 @@ from .schemas.responses import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Thread pool for file I/O operations to prevent blocking the main loop
+# and to separate I/O tasks from heavy TTS synthesis tasks
+IO_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="voice_io")
 
 # Security: API Token Management
 API_TOKEN = get_or_create_token()
@@ -373,8 +378,9 @@ async def handle_synthesize(request: Request) -> Response:
             )
 
             # Read audio file and encode as base64
-            # Run in executor to avoid blocking the event loop with file I/O
-            audio_base64, size_bytes = await loop.run_in_executor(None, _read_and_encode_audio, tmp_path)
+            # Run in dedicated I/O executor to avoid blocking the event loop
+            # and to prevent contention with the default executor used for TTS synthesis
+            audio_base64, size_bytes = await loop.run_in_executor(IO_EXECUTOR, _read_and_encode_audio, tmp_path)
 
             result = {
                 "audio": audio_base64,
