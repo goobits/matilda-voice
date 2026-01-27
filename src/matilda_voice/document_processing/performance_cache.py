@@ -454,12 +454,18 @@ class PerformanceOptimizer:
 
     def _split_by_paragraphs(self, content: str, max_chunk_size: int) -> List[str]:
         """Split content by paragraphs, then sentences if needed."""
-        paragraphs = RE_PARAGRAPH_SPLIT.split(content)
         chunks = []
         current_chunk_parts: List[str] = []
         current_chunk_len = 0
 
-        for paragraph in paragraphs:
+        def _iterate_paragraphs(text: str):
+            last_pos = 0
+            for match in RE_PARAGRAPH_SPLIT.finditer(text):
+                yield text[last_pos:match.start()]
+                last_pos = match.end()
+            yield text[last_pos:]
+
+        for paragraph in _iterate_paragraphs(content):
             # Calculate length added: paragraph length + 2 for "\n\n" separator (if not first)
             added_len = len(paragraph) + (2 if current_chunk_parts else 0)
 
