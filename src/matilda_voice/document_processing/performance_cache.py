@@ -17,9 +17,9 @@ from matilda_voice.internal.types import SemanticElement, SemanticType
 logger = logging.getLogger(__name__)
 
 # Compile regex patterns at module level for performance
-RE_HEADER = re.compile(r"\n\s*#{1,6}\s+.+")
+# Combined regex for newline-based boundaries (headers and major breaks) to reduce passes
+RE_NEWLINE_BOUNDARY = re.compile(r"\n(?:\s*#{1,6}\s+.+|\s*\n\s*\n)")
 RE_HTML_HEADER = re.compile(r"<h[1-6][^>]*>", re.IGNORECASE)
-RE_MAJOR_PARAGRAPH_BREAK = re.compile(r"\n\s*\n\s*\n")
 RE_PARAGRAPH_SPLIT = re.compile(r"\n\s*\n")
 RE_SENTENCE_SPLIT = re.compile(r"[.!?]+")
 
@@ -442,16 +442,12 @@ class PerformanceOptimizer:
         """Find natural section boundaries in the document."""
         boundaries = []
 
-        # Look for headers
-        for match in RE_HEADER.finditer(content):
+        # Look for newline-based boundaries (headers and major breaks)
+        for match in RE_NEWLINE_BOUNDARY.finditer(content):
             boundaries.append(match.start())
 
         # Look for HTML headers
         for match in RE_HTML_HEADER.finditer(content):
-            boundaries.append(match.start())
-
-        # Look for major paragraph breaks
-        for match in RE_MAJOR_PARAGRAPH_BREAK.finditer(content):
             boundaries.append(match.start())
 
         return sorted(set(boundaries))
