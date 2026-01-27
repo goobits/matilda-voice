@@ -23,7 +23,6 @@ import uuid
 
 from aiohttp import web
 from aiohttp.web import Request, Response
-
 from matilda_transport import ensure_pipe_supported, prepare_unix_socket, resolve_transport
 
 from .internal.security import get_allowed_origins
@@ -184,11 +183,28 @@ def error_response(
 def _read_and_encode_audio(path: str) -> tuple[str, int]:
     """Read audio file and encode as base64.
 
-    This function is intended to be run in an executor to avoid blocking the event loop.
+    This function is intended to be run in an executor.
+    It processes the file in chunks to avoid holding the GIL for too long,
+    preventing the event loop from being starved for large files.
     """
+    encoded_parts = []
+    file_size = 0
+
+    # Chunk size: needs to be multiple of 3 so base64 doesn't pad in the middle
+    # 8192 * 3 = 24576 bytes
+    chunk_size = 24576
+
     with open(path, "rb") as f:
-        audio_data = f.read()
-    return base64.b64encode(audio_data).decode("utf-8"), len(audio_data)
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            file_size += len(chunk)
+            # b64encode returns bytes, decode to str
+            encoded_chunk = base64.b64encode(chunk).decode("utf-8")
+            encoded_parts.append(encoded_chunk)
+
+    return "".join(encoded_parts), file_size
 
 
 async def handle_options(request: Request) -> Response:
@@ -358,9 +374,7 @@ async def handle_synthesize(request: Request) -> Response:
 
             # Read audio file and encode as base64
             # Run in executor to avoid blocking the event loop with file I/O
-            audio_base64, size_bytes = await loop.run_in_executor(
-                None, _read_and_encode_audio, tmp_path
-            )
+            audio_base64, size_bytes = await loop.run_in_executor(None, _read_and_encode_audio, tmp_path)
 
             result = {
                 "audio": audio_base64,
@@ -473,6 +487,7 @@ def run_server(host: str = "0.0.0.0", port: int = 8771):
         return
     if transport.transport == "pipe":
         ensure_pipe_supported(transport)
+
         async def run_pipe():
             runner = web.AppRunner(app)
             await runner.setup()
