@@ -39,10 +39,21 @@ _MALE_INDICATORS = [
 _PROBLEMATIC_WORDS = {"man", "eric"}
 
 # Pre-compiled regexes for problematic words
-_PROBLEMATIC_REGEXES = {
-    word: re.compile(r"\b" + re.escape(word) + r"\b")
-    for word in _PROBLEMATIC_WORDS
-}
+_PROBLEMATIC_REGEXES = {}
+for word in _PROBLEMATIC_WORDS:
+    if word == "eric":
+        # Allow "eric" at start of word, but don't require end boundary to match "ericneural"
+        # However, we must ensure it doesn't match inside words like "generic" or "american"
+        # \b ensures start boundary.
+        _PROBLEMATIC_REGEXES[word] = re.compile(r"\b" + re.escape(word))
+    else:
+        _PROBLEMATIC_REGEXES[word] = re.compile(r"\b" + re.escape(word) + r"\b")
+
+# Split indicators for performance optimization
+_FEMALE_SIMPLE = [i for i in _FEMALE_INDICATORS if i not in _PROBLEMATIC_WORDS]
+_FEMALE_REGEX = [i for i in _FEMALE_INDICATORS if i in _PROBLEMATIC_WORDS]
+_MALE_SIMPLE = [i for i in _MALE_INDICATORS if i not in _PROBLEMATIC_WORDS]
+_MALE_REGEX = [i for i in _MALE_INDICATORS if i in _PROBLEMATIC_WORDS]
 
 
 def analyze_voice(provider: str, voice: str) -> Tuple[int, str, str]:
@@ -90,28 +101,27 @@ def analyze_voice(provider: str, voice: str) -> Tuple[int, str, str]:
     # Check for gender indicators with smart boundary detection
     # Use word boundaries for problematic short words, partial matches for names
 
-    for indicator in _FEMALE_INDICATORS:
-        if indicator in _PROBLEMATIC_WORDS:
-            # Use word boundaries for problematic words
+    # Check female indicators
+    for indicator in _FEMALE_SIMPLE:
+        if indicator in voice_lower:
+            gender = "F"
+            break
+
+    if gender == "U" and _FEMALE_REGEX:
+        for indicator in _FEMALE_REGEX:
             if _PROBLEMATIC_REGEXES[indicator].search(voice_lower):
-                gender = "F"
-                break
-        else:
-            # Allow partial matches for names (e.g., "jenny" in "jennyneural")
-            if indicator in voice_lower:
                 gender = "F"
                 break
 
     if gender == "U":  # Only check male if not already female
-        for indicator in _MALE_INDICATORS:
-            if indicator in _PROBLEMATIC_WORDS:
-                # Use word boundaries for problematic words
+        for indicator in _MALE_SIMPLE:
+            if indicator in voice_lower:
+                gender = "M"
+                break
+
+        if gender == "U":
+            for indicator in _MALE_REGEX:
                 if _PROBLEMATIC_REGEXES[indicator].search(voice_lower):
-                    gender = "M"
-                    break
-            else:
-                # Allow partial matches for names
-                if indicator in voice_lower:
                     gender = "M"
                     break
 
