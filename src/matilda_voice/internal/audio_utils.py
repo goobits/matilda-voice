@@ -1,5 +1,6 @@
 """Shared audio utilities for TTS providers to avoid code duplication."""
 
+import asyncio
 import logging
 import os
 import subprocess
@@ -893,6 +894,57 @@ def get_audio_duration(audio_path: str) -> float:
             return float(result.stdout.strip())
     except (FileNotFoundError, subprocess.SubprocessError, ValueError, subprocess.TimeoutExpired):
         logger.debug(f"Could not get duration for {audio_path}")
+
+    return 0.0
+
+
+async def get_audio_duration_async(audio_path: str) -> float:
+    """Get duration of audio file in seconds using ffprobe asynchronously.
+
+    Args:
+        audio_path: Path to audio file
+
+    Returns:
+        Duration in seconds, or 0.0 if cannot be determined
+    """
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "ffprobe",
+            "-v",
+            "quiet",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "csv=p=0",
+            audio_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    except (FileNotFoundError, OSError):
+        logger.debug(f"Could not get duration for {audio_path}: ffprobe not found or error starting")
+        return 0.0
+
+    try:
+        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=5)
+
+        if process.returncode == 0 and stdout:
+            return float(stdout.decode().strip())
+    except asyncio.TimeoutError:
+        try:
+            process.terminate()
+            await process.wait()
+        except ProcessLookupError:
+            pass
+        logger.debug(f"Timeout getting duration for {audio_path}")
+    except asyncio.CancelledError:
+        try:
+            process.terminate()
+            await process.wait()
+        except ProcessLookupError:
+            pass
+        raise
+    except (ValueError, OSError) as e:
+        logger.debug(f"Could not get duration for {audio_path}: {e}")
 
     return 0.0
 
