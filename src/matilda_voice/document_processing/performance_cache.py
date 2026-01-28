@@ -458,14 +458,10 @@ class PerformanceOptimizer:
         current_chunk_parts: List[str] = []
         current_chunk_len = 0
 
-        def _iterate_paragraphs(text: str):
-            last_pos = 0
-            for match in RE_PARAGRAPH_SPLIT.finditer(text):
-                yield text[last_pos:match.start()]
-                last_pos = match.end()
-            yield text[last_pos:]
+        # Optimization: Use pre-compiled regex split instead of manual generator
+        paragraphs = RE_PARAGRAPH_SPLIT.split(content)
 
-        for paragraph in _iterate_paragraphs(content):
+        for paragraph in paragraphs:
             # Calculate length added: paragraph length + 2 for "\n\n" separator (if not first)
             added_len = len(paragraph) + (2 if current_chunk_parts else 0)
 
