@@ -196,8 +196,10 @@ def _read_and_encode_audio(path: str) -> tuple[str, int]:
     file_size = 0
 
     # Chunk size: needs to be multiple of 3 so base64 doesn't pad in the middle
-    # 8192 * 3 = 24576 bytes
-    chunk_size = 24576
+    # Larger chunk size (768KB) improves throughput and reduces GIL contention
+    # compared to smaller chunks, while avoiding the latency spike of reading the whole file.
+    # 262144 * 3 = 786432 bytes
+    chunk_size = 786432
 
     with open(path, "rb") as f:
         while True:
