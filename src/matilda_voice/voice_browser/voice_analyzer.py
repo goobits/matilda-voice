@@ -71,8 +71,11 @@ def _build_indicator_regex(indicators: List[str], problematic_words: Set[str]) -
 
     Handles simple substrings and problematic words with boundaries.
     """
+    # Sort by length descending to ensure longer matches take precedence
+    sorted_indicators = sorted(indicators, key=len, reverse=True)
+
     parts = []
-    for indicator in indicators:
+    for indicator in sorted_indicators:
         if indicator == "eric":
             # Allow "eric" at start of word, but don't require end boundary to match "ericneural"
             # However, we must ensure it doesn't match inside words like "generic" or "american"
