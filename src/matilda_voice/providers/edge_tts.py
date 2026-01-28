@@ -9,6 +9,7 @@ from ..exceptions import DependencyError, NetworkError, ProviderError
 from ..internal.audio_utils import (
     StreamingPlayer,
     check_audio_environment,
+    check_audio_environment_async,
     convert_with_cleanup,
     parse_bool_param,
     stream_via_tempfile,
@@ -146,7 +147,7 @@ class EdgeTTSProvider(TTSProvider):
             raise ProviderError("Edge TTS module not loaded")
 
         # Check for audio environment first
-        audio_env = check_audio_environment()
+        audio_env = await check_audio_environment_async()
         if not audio_env["available"]:
             self.logger.warning(f"Audio streaming not available: {audio_env['reason']}")
             return await self._stream_via_tempfile(text, voice, rate, pitch)
