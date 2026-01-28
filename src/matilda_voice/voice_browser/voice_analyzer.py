@@ -39,6 +39,33 @@ _MALE_INDICATORS = [
 _PROBLEMATIC_WORDS = {"man", "eric"}
 
 
+# Region constants
+_REGION_MAP = {
+    "en-IE": "Irish",
+    "Irish": "Irish",
+    "en-GB": "British",
+    "en-UK": "British",
+    "British": "British",
+    "en-US": "American",
+    "American": "American",
+    "en-AU": "Australian",
+    "Australian": "Australian",
+    "en-CA": "Canadian",
+    "Canadian": "Canadian",
+    "en-IN": "Indian",
+    "Indian": "Indian",
+}
+
+# Sort keys by length descending to ensure longer matches take precedence
+# (e.g. if we had "en-US-East" and "en-US", we'd want to match "en-US-East" first if it maps to something specific)
+_REGION_KEYS = sorted(_REGION_MAP.keys(), key=len, reverse=True)
+_REGION_PATTERN = re.compile("|".join(re.escape(k) for k in _REGION_KEYS))
+
+# Quality constants
+_QUALITY_HIGH_PATTERN = re.compile(r"neural|premium|standard")
+_QUALITY_LOW_PATTERN = re.compile(r"basic|low")
+
+
 def _build_indicator_regex(indicators: List[str], problematic_words: Set[str]) -> re.Pattern:
     """Build a combined regex pattern for indicators.
 
@@ -83,25 +110,16 @@ def analyze_voice(provider: str, voice: str) -> Tuple[int, str, str]:
 
     # Quality heuristics
     quality = 2  # Default medium
-    if "neural" in voice_lower or "premium" in voice_lower or "standard" in voice_lower:
+    if _QUALITY_HIGH_PATTERN.search(voice_lower):
         quality = 3  # High quality
-    elif "basic" in voice_lower or "low" in voice_lower:
+    elif _QUALITY_LOW_PATTERN.search(voice_lower):
         quality = 1  # Low quality
 
     # Region detection
     region = "General"
-    if any(marker in voice for marker in ["en-IE", "Irish"]):
-        region = "Irish"
-    elif any(marker in voice for marker in ["en-GB", "en-UK", "British"]):
-        region = "British"
-    elif any(marker in voice for marker in ["en-US", "American"]):
-        region = "American"
-    elif any(marker in voice for marker in ["en-AU", "Australian"]):
-        region = "Australian"
-    elif any(marker in voice for marker in ["en-CA", "Canadian"]):
-        region = "Canadian"
-    elif any(marker in voice for marker in ["en-IN", "Indian"]):
-        region = "Indian"
+    match = _REGION_PATTERN.search(voice)
+    if match:
+        region = _REGION_MAP[match.group(0)]
     elif provider == "chatterbox":
         region = "Chatterbox"
 
