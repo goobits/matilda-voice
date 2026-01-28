@@ -1,5 +1,6 @@
 """Shared audio utilities for TTS providers to avoid code duplication."""
 
+import asyncio
 import logging
 import os
 import subprocess
@@ -730,6 +731,15 @@ def check_audio_environment() -> Dict[str, Any]:
 
     result["reason"] = "No audio devices or audio system unavailable"
     return result
+
+
+async def check_audio_environment_async() -> Dict[str, Any]:
+    """Check if audio streaming is available in current environment (async).
+
+    Runs the blocking check_audio_environment in a thread pool executor.
+    """
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, check_audio_environment)
 
 
 def stream_audio_file(audio_path: str) -> None:
