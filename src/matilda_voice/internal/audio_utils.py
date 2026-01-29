@@ -750,14 +750,60 @@ def check_audio_environment(force_refresh: bool = False) -> Dict[str, Any]:
 async def check_audio_environment_async() -> Dict[str, Any]:
     """Check if audio streaming is available in current environment (async).
 
-    Runs the blocking check_audio_environment in a thread pool executor.
+    Uses native asyncio subprocess to avoid thread blocking.
     """
     global _AUDIO_ENV_CACHE
     if _AUDIO_ENV_CACHE is not None:
         return _AUDIO_ENV_CACHE.copy()
 
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, check_audio_environment)
+    result = {"available": False, "reason": "Unknown", "pulse_available": False, "alsa_available": False}
+
+    # Check for PulseAudio
+    if "PULSE_SERVER" in os.environ:
+        result["pulse_available"] = True
+        result["available"] = True
+        result["reason"] = "PulseAudio available"
+        _AUDIO_ENV_CACHE = result
+        return result
+
+    # Check for ALSA devices
+    try:
+        if os.path.exists("/proc/asound/cards") and os.path.getsize("/proc/asound/cards") > 0:
+            result["alsa_available"] = True
+            result["available"] = True
+            result["reason"] = "ALSA devices available"
+            _AUDIO_ENV_CACHE = result
+            return result
+    except (ImportError, OSError):
+        logger.debug("ALSA check failed in async check")
+
+    # Check if we can reach audio system
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "aplay",
+            "--version",
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        try:
+            await asyncio.wait_for(process.wait(), timeout=2.0)
+            result["available"] = True
+            result["reason"] = "Audio system responsive"
+            _AUDIO_ENV_CACHE = result
+            return result
+        except asyncio.TimeoutError:
+            try:
+                process.terminate()
+                await process.wait()
+            except ProcessLookupError:
+                pass
+            logger.debug("Audio system check timed out")
+    except (FileNotFoundError, OSError) as e:
+        logger.debug(f"Audio system check failed: {e}")
+
+    result["reason"] = "No audio devices or audio system unavailable"
+    _AUDIO_ENV_CACHE = result
+    return result
 
 
 def stream_audio_file(audio_path: str) -> None:
