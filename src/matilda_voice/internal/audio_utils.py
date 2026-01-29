@@ -15,6 +15,9 @@ from .config import get_config_value
 # Module logger
 logger = logging.getLogger(__name__)
 
+# Cache for audio environment check
+_AUDIO_ENV_CACHE: Optional[Dict[str, Any]] = None
+
 
 # =============================================================================
 # Helper utilities for parameter parsing
@@ -695,12 +698,19 @@ def handle_ffplay_process_error(process: subprocess.Popen, logger: logging.Logge
             logger.debug(f"FFplay {context} completed successfully")
 
 
-def check_audio_environment() -> Dict[str, Any]:
+def check_audio_environment(force_refresh: bool = False) -> Dict[str, Any]:
     """Check if audio streaming is available in current environment.
+
+    Args:
+        force_refresh: Whether to force a re-check ignoring cache
 
     Returns:
         Dict with 'available' (bool), 'reason' (str), and device availability flags
     """
+    global _AUDIO_ENV_CACHE
+    if _AUDIO_ENV_CACHE is not None and not force_refresh:
+        return _AUDIO_ENV_CACHE.copy()
+
     result = {"available": False, "reason": "Unknown", "pulse_available": False, "alsa_available": False}
 
     # Check for PulseAudio
@@ -708,6 +718,7 @@ def check_audio_environment() -> Dict[str, Any]:
         result["pulse_available"] = True
         result["available"] = True
         result["reason"] = "PulseAudio available"
+        _AUDIO_ENV_CACHE = result
         return result
 
     # Check for ALSA devices
@@ -716,6 +727,7 @@ def check_audio_environment() -> Dict[str, Any]:
             result["alsa_available"] = True
             result["available"] = True
             result["reason"] = "ALSA devices available"
+            _AUDIO_ENV_CACHE = result
             return result
     except (ImportError, OSError, subprocess.SubprocessError) as e:
         logger.debug(f"ALSA check failed: {e}")
@@ -725,11 +737,13 @@ def check_audio_environment() -> Dict[str, Any]:
         subprocess.run(["aplay", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2)
         result["available"] = True
         result["reason"] = "Audio system responsive"
+        _AUDIO_ENV_CACHE = result
         return result
     except (FileNotFoundError, subprocess.SubprocessError, subprocess.TimeoutExpired) as e:
         logger.debug(f"Audio system check failed: {e}")
 
     result["reason"] = "No audio devices or audio system unavailable"
+    _AUDIO_ENV_CACHE = result
     return result
 
 
@@ -738,6 +752,10 @@ async def check_audio_environment_async() -> Dict[str, Any]:
 
     Runs the blocking check_audio_environment in a thread pool executor.
     """
+    global _AUDIO_ENV_CACHE
+    if _AUDIO_ENV_CACHE is not None:
+        return _AUDIO_ENV_CACHE.copy()
+
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, check_audio_environment)
 
