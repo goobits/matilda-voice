@@ -8,7 +8,6 @@ from ..base import TTSProvider
 from ..exceptions import DependencyError, NetworkError, ProviderError
 from ..internal.audio_utils import (
     StreamingPlayer,
-    check_audio_environment,
     check_audio_environment_async,
     convert_with_cleanup,
     parse_bool_param,
