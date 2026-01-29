@@ -61,10 +61,6 @@ _REGION_MAP = {
 _REGION_KEYS = sorted(_REGION_MAP.keys(), key=len, reverse=True)
 _REGION_PATTERN = re.compile("|".join(re.escape(k) for k in _REGION_KEYS))
 
-# Quality constants
-_QUALITY_HIGH_PATTERN = re.compile(r"neural|premium|standard")
-_QUALITY_LOW_PATTERN = re.compile(r"basic|low")
-
 
 def _build_indicator_regex(indicators: list[str], problematic_words: set[str]) -> re.Pattern:
     """Build a combined regex pattern for indicators.
@@ -115,9 +111,9 @@ def analyze_voice(provider: str, voice: str) -> Tuple[int, str, str]:
 
     # Quality heuristics
     quality = 2  # Default medium
-    if _QUALITY_HIGH_PATTERN.search(voice_lower):
+    if "neural" in voice_lower or "premium" in voice_lower or "standard" in voice_lower:
         quality = 3  # High quality
-    elif _QUALITY_LOW_PATTERN.search(voice_lower):
+    elif "basic" in voice_lower or "low" in voice_lower:
         quality = 1  # Low quality
 
     # Region detection
