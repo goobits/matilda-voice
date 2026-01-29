@@ -882,6 +882,26 @@ def normalize_audio_path(path: str, default_format: str = "wav") -> str:
     return path
 
 
+import wave
+import contextlib
+
+def _get_wav_duration(audio_path: str) -> Optional[float]:
+    """Get duration of WAV file using standard library.
+
+    Returns:
+        Duration in seconds, or None if failed/not a wav.
+    """
+    try:
+        with contextlib.closing(wave.open(audio_path, 'rb')) as f:
+            frames = f.getnframes()
+            rate = f.getframerate()
+            if rate > 0:
+                return frames / float(rate)
+    except Exception:
+        pass
+    return None
+
+
 def get_audio_duration(audio_path: str) -> float:
     """Get duration of audio file in seconds using ffprobe.
 
@@ -891,6 +911,12 @@ def get_audio_duration(audio_path: str) -> float:
     Returns:
         Duration in seconds, or 0.0 if cannot be determined
     """
+    # Try fast path for WAV
+    if audio_path.lower().endswith(".wav"):
+        duration = _get_wav_duration(audio_path)
+        if duration is not None:
+            return duration
+
     try:
         result = subprocess.run(
             ["ffprobe", "-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", audio_path],
@@ -916,6 +942,12 @@ async def get_audio_duration_async(audio_path: str) -> float:
     Returns:
         Duration in seconds, or 0.0 if cannot be determined
     """
+    # Try fast path for WAV
+    if audio_path.lower().endswith(".wav"):
+        duration = _get_wav_duration(audio_path)
+        if duration is not None:
+            return duration
+
     try:
         process = await asyncio.create_subprocess_exec(
             "ffprobe",
