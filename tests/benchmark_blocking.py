@@ -30,15 +30,15 @@ async def run_benchmark():
 
     print("\n--- Benchmark Start (WAV Optimization) ---")
 
-    # 1. Test Sync Function with WAV optimization
-    print("\nTesting Sync get_audio_duration (should be instant and yield 10.0):")
+    # 1. Test get_audio_duration (now Async) with WAV optimization
+    print("\nTesting get_audio_duration (Async) (should be instant and yield 10.0):")
     ticker_task = asyncio.create_task(ticker())
 
     start_time = time.time()
 
     # Run loop
     for _ in range(100):
-        duration = get_audio_duration(test_file)
+        duration = await get_audio_duration(test_file)
         if duration != 10.0:
             print(f"Error: expected 10.0, got {duration}")
             break
@@ -47,10 +47,10 @@ async def run_benchmark():
 
     ticker_task.cancel()
     await asyncio.sleep(0.1)
-    print(f"\nSync calls (100x) took {total_time:.4f}s (Avg: {total_time/100*1000:.4f}ms)")
+    print(f"\nget_audio_duration calls (100x) took {total_time:.4f}s (Avg: {total_time/100*1000:.4f}ms)")
 
-    # 2. Test Async Function with WAV optimization
-    print("\nTesting Async get_audio_duration_async (should be instant and yield 10.0):")
+    # 2. Test get_audio_duration_async (Alias) with WAV optimization
+    print("\nTesting get_audio_duration_async (Alias) (should be instant and yield 10.0):")
     ticker_task = asyncio.create_task(ticker())
 
     start_time = time.time()
@@ -65,7 +65,7 @@ async def run_benchmark():
 
     ticker_task.cancel()
     await asyncio.sleep(0.1)
-    print(f"\nAsync calls (100x) took {total_time:.4f}s (Avg: {total_time/100*1000:.4f}ms)")
+    print(f"\nAlias calls (100x) took {total_time:.4f}s (Avg: {total_time/100*1000:.4f}ms)")
 
     # Clean up
     if os.path.exists(test_file):

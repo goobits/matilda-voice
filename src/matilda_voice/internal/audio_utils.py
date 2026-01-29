@@ -970,64 +970,7 @@ def _get_wav_duration(audio_path: str) -> Optional[float]:
     return None
 
 
-def get_audio_duration(audio_path: str) -> float:
-    """Get duration of audio file in seconds using ffprobe.
-
-    Args:
-        audio_path: Path to audio file
-
-    Returns:
-        Duration in seconds, or 0.0 if cannot be determined
-    """
-    abs_path = None
-    mtime = 0.0
-    size = 0
-
-    try:
-        abs_path = os.path.abspath(audio_path)
-        stat_result = os.stat(abs_path)
-        mtime = stat_result.st_mtime
-        size = stat_result.st_size
-
-        if abs_path in _AUDIO_DURATION_CACHE:
-            c_mtime, c_size, c_dur = _AUDIO_DURATION_CACHE[abs_path]
-            if c_mtime == mtime and c_size == size:
-                return c_dur
-    except OSError:
-        pass
-
-    # Try fast path for WAV
-    if audio_path.lower().endswith(".wav"):
-        duration = _get_wav_duration(audio_path)
-        if duration is not None:
-            if abs_path:
-                if len(_AUDIO_DURATION_CACHE) >= _MAX_CACHE_SIZE:
-                    _AUDIO_DURATION_CACHE.clear()
-                _AUDIO_DURATION_CACHE[abs_path] = (mtime, size, duration)
-            return duration
-
-    try:
-        result = subprocess.run(
-            ["ffprobe", "-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", audio_path],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-
-        if result.returncode == 0 and result.stdout.strip():
-            duration = float(result.stdout.strip())
-            if abs_path:
-                if len(_AUDIO_DURATION_CACHE) >= _MAX_CACHE_SIZE:
-                    _AUDIO_DURATION_CACHE.clear()
-                _AUDIO_DURATION_CACHE[abs_path] = (mtime, size, duration)
-            return duration
-    except (FileNotFoundError, subprocess.SubprocessError, ValueError, subprocess.TimeoutExpired):
-        logger.debug(f"Could not get duration for {audio_path}")
-
-    return 0.0
-
-
-async def get_audio_duration_async(audio_path: str) -> float:
+async def get_audio_duration(audio_path: str) -> float:
     """Get duration of audio file in seconds using ffprobe asynchronously.
 
     Args:
@@ -1109,6 +1052,10 @@ async def get_audio_duration_async(audio_path: str) -> float:
         logger.debug(f"Could not get duration for {audio_path}: {e}")
 
     return 0.0
+
+
+# Backward compatibility alias
+get_audio_duration_async = get_audio_duration
 
 
 def validate_audio_file(audio_path: str) -> bool:
