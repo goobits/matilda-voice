@@ -1,7 +1,7 @@
 
 import pytest
 import asyncio
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from matilda_voice.internal import audio_utils
 
 def setup_function():
@@ -37,24 +37,30 @@ async def test_check_audio_environment_async_caching():
     # Pre-populate cache
     audio_utils._AUDIO_ENV_CACHE = {"available": True, "reason": "Cached", "pulse_available": False, "alsa_available": False}
 
-    with patch("matilda_voice.internal.audio_utils.check_audio_environment") as mock_sync_check:
-        # Should return cached result without calling sync check via executor
+    # We don't expect it to call check_audio_environment anymore, but it shouldn't call any subprocess either
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+        # Should return cached result without calling subprocess
         result = await audio_utils.check_audio_environment_async()
 
         assert result["reason"] == "Cached"
-        assert not mock_sync_check.called
+        assert not mock_exec.called
 
 @pytest.mark.asyncio
 async def test_check_audio_environment_async_populates_cache():
-    """Test that check_audio_environment_async populates cache via sync call."""
+    """Test that check_audio_environment_async populates cache via async call."""
     # Clear cache
     audio_utils._AUDIO_ENV_CACHE = None
 
     with patch("os.path.exists", return_value=False):
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value.returncode = 0
+        # Patch asyncio.create_subprocess_exec to simulate success
+        with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+            mock_process = MagicMock()
+            # wait() should be awaitable
+            mock_process.wait = AsyncMock(return_value=None)
 
-            # First call - goes to executor
+            mock_exec.return_value = mock_process
+
+            # First call - goes to subprocess
             result = await audio_utils.check_audio_environment_async()
             assert result["available"] is True
 

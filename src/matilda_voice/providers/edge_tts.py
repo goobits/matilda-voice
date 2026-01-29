@@ -195,14 +195,18 @@ class EdgeTTSProvider(TTSProvider):
                 self._synthesize_async(text, output_path, kwargs["voice"], kwargs["rate"], kwargs["pitch"], "mp3")
             )
 
-        stream_via_tempfile(
-            synthesize_func=sync_synthesize,
-            text=text,
-            logger=self.logger,
-            file_suffix=".mp3",
-            voice=voice,
-            rate=rate,
-            pitch=pitch,
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(
+            self._executor,
+            lambda: stream_via_tempfile(
+                synthesize_func=sync_synthesize,
+                text=text,
+                logger=self.logger,
+                file_suffix=".mp3",
+                voice=voice,
+                rate=rate,
+                pitch=pitch,
+            ),
         )
 
     def synthesize(self, text: str, output_path: Optional[str], **kwargs: Any) -> None:
