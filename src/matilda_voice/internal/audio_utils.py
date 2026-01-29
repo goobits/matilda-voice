@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, Tuple
 
 from ..exceptions import AudioPlaybackError, DependencyError
 from .config import get_config_value
@@ -17,6 +17,10 @@ logger = logging.getLogger(__name__)
 
 # Cache for audio environment check
 _AUDIO_ENV_CACHE: Optional[Dict[str, Any]] = None
+
+# Cache for audio duration: path -> (mtime, size, duration)
+_AUDIO_DURATION_CACHE: Dict[str, Tuple[float, int, float]] = {}
+_MAX_CACHE_SIZE = 1000
 
 
 # =============================================================================
@@ -929,10 +933,31 @@ def get_audio_duration(audio_path: str) -> float:
     Returns:
         Duration in seconds, or 0.0 if cannot be determined
     """
+    abs_path = None
+    mtime = 0.0
+    size = 0
+
+    try:
+        abs_path = os.path.abspath(audio_path)
+        stat_result = os.stat(abs_path)
+        mtime = stat_result.st_mtime
+        size = stat_result.st_size
+
+        if abs_path in _AUDIO_DURATION_CACHE:
+            c_mtime, c_size, c_dur = _AUDIO_DURATION_CACHE[abs_path]
+            if c_mtime == mtime and c_size == size:
+                return c_dur
+    except OSError:
+        pass
+
     # Try fast path for WAV
     if audio_path.lower().endswith(".wav"):
         duration = _get_wav_duration(audio_path)
         if duration is not None:
+            if abs_path:
+                if len(_AUDIO_DURATION_CACHE) >= _MAX_CACHE_SIZE:
+                    _AUDIO_DURATION_CACHE.clear()
+                _AUDIO_DURATION_CACHE[abs_path] = (mtime, size, duration)
             return duration
 
     try:
@@ -944,7 +969,12 @@ def get_audio_duration(audio_path: str) -> float:
         )
 
         if result.returncode == 0 and result.stdout.strip():
-            return float(result.stdout.strip())
+            duration = float(result.stdout.strip())
+            if abs_path:
+                if len(_AUDIO_DURATION_CACHE) >= _MAX_CACHE_SIZE:
+                    _AUDIO_DURATION_CACHE.clear()
+                _AUDIO_DURATION_CACHE[abs_path] = (mtime, size, duration)
+            return duration
     except (FileNotFoundError, subprocess.SubprocessError, ValueError, subprocess.TimeoutExpired):
         logger.debug(f"Could not get duration for {audio_path}")
 
@@ -960,10 +990,32 @@ async def get_audio_duration_async(audio_path: str) -> float:
     Returns:
         Duration in seconds, or 0.0 if cannot be determined
     """
+    abs_path = None
+    mtime = 0.0
+    size = 0
+
+    try:
+        abs_path = os.path.abspath(audio_path)
+        loop = asyncio.get_running_loop()
+        stat_result = await loop.run_in_executor(None, os.stat, abs_path)
+        mtime = stat_result.st_mtime
+        size = stat_result.st_size
+
+        if abs_path in _AUDIO_DURATION_CACHE:
+            c_mtime, c_size, c_dur = _AUDIO_DURATION_CACHE[abs_path]
+            if c_mtime == mtime and c_size == size:
+                return c_dur
+    except (OSError, RuntimeError):
+        pass
+
     # Try fast path for WAV
     if audio_path.lower().endswith(".wav"):
         duration = _get_wav_duration(audio_path)
         if duration is not None:
+            if abs_path:
+                if len(_AUDIO_DURATION_CACHE) >= _MAX_CACHE_SIZE:
+                    _AUDIO_DURATION_CACHE.clear()
+                _AUDIO_DURATION_CACHE[abs_path] = (mtime, size, duration)
             return duration
 
     try:
@@ -987,7 +1039,12 @@ async def get_audio_duration_async(audio_path: str) -> float:
         stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=5)
 
         if process.returncode == 0 and stdout:
-            return float(stdout.decode().strip())
+            duration = float(stdout.decode().strip())
+            if abs_path:
+                if len(_AUDIO_DURATION_CACHE) >= _MAX_CACHE_SIZE:
+                    _AUDIO_DURATION_CACHE.clear()
+                _AUDIO_DURATION_CACHE[abs_path] = (mtime, size, duration)
+            return duration
     except asyncio.TimeoutError:
         try:
             process.terminate()
