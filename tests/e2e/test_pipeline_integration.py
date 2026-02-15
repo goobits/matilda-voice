@@ -552,9 +552,28 @@ class TestProviderPipelinePerformance(PipelineTestBase):
             output_file = tmp_path / f"{task['id']}.mp3"
             start_time = time.time()
 
-            result, actual_output = self.cli_helper.invoke_save(
-                task["text"], provider=task["provider"], output_path=str(output_file)
-            )
+            # Click's CliRunner mutates global stdio and is not thread-safe. Use subprocess per thread.
+            import subprocess
+            import sys
+
+            repo_root = Path(__file__).resolve().parents[2]
+            env = os.environ.copy()
+            pythonpath_entries = [str(repo_root / "src"), str(repo_root)]
+            existing_pythonpath = env.get("PYTHONPATH", "")
+            prefix = os.pathsep.join(pythonpath_entries)
+            env["PYTHONPATH"] = f"{prefix}{os.pathsep}{existing_pythonpath}" if existing_pythonpath else prefix
+
+            cmd = [
+                sys.executable,
+                "-m",
+                "matilda_voice.cli",
+                "save",
+                task["text"],
+                task["provider"],
+                "-o",
+                str(output_file),
+            ]
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=env, check=False)
 
             synthesis_time = time.time() - start_time
 
@@ -563,8 +582,10 @@ class TestProviderPipelinePerformance(PipelineTestBase):
                     "task_id": task["id"],
                     "provider": task["provider"],
                     "synthesis_time": synthesis_time,
-                    "success": result.exit_code == 0 and actual_output and actual_output.exists(),
-                    "result": result,
+                    "success": proc.returncode == 0 and output_file.exists(),
+                    "exit_code": proc.returncode,
+                    "stdout": proc.stdout,
+                    "stderr": proc.stderr,
                 }
             )
 
