@@ -249,6 +249,7 @@ def pytest_collection_modifyitems(config, items):
 
     allow_network_skips = os.getenv("VOICE_ALLOW_NETWORK_SKIPS") == "1"
     has_network = _network_available()
+    run_benchmarks = os.getenv("VOICE_RUN_BENCHMARKS") == "1"
 
     # Check for any real provider availability
     has_any_provider = False
@@ -270,7 +271,9 @@ def pytest_collection_modifyitems(config, items):
         # Check each marker condition
         should_deselect = False
 
-        if item.get_closest_marker("requires_ci_skip") and is_ci:
+        if item.get_closest_marker("benchmark") and not run_benchmarks:
+            should_deselect = True
+        elif item.get_closest_marker("requires_ci_skip") and is_ci:
             should_deselect = True
         elif item.get_closest_marker("requires_chatterbox") and not has_chatterbox:
             should_deselect = True
