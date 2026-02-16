@@ -228,6 +228,15 @@ def get_hooks():
         _hooks = load_hooks()
     return _hooks
 
+def invoke_hook(ctx, hook_name: str, kwargs: Dict[str, Any]) -> None:
+    """Invoke a hook by name or exit with a clear error."""
+    hooks = get_hooks()
+    if hooks and hasattr(hooks, hook_name):
+        getattr(hooks, hook_name)(ctx=ctx, **kwargs)
+        return
+    logger.error(f"Hook '{hook_name}' not implemented in cli_hooks.py")
+    sys.exit(1)
+
 # ============================================================================
 # CLI COMMANDS
 # ============================================================================
@@ -255,13 +264,8 @@ def cli(ctx, verbose, debug, config):
 def speak(ctx, text, options, voice, rate, pitch, debug, ssml):
     """Speak text aloud"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_speak'):
-            kwargs = {                'text': text,                'options': options,                'voice': voice,                'rate': rate,                'pitch': pitch,                'debug': debug,                'ssml': ssml,            }
-            hooks.on_speak(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_speak' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {            'text': text,            'options': options,            'voice': voice,            'rate': rate,            'pitch': pitch,            'debug': debug,            'ssml': ssml,        }
+        invoke_hook(ctx, 'on_speak', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('save')
@@ -279,13 +283,8 @@ def speak(ctx, text, options, voice, rate, pitch, debug, ssml):
 def save(ctx, text, options, output, format, voice, json, debug, rate, pitch, ssml):
     """Save text as an audio file"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_save'):
-            kwargs = {                'text': text,                'options': options,                'output': output,                'format': format,                'voice': voice,                'json': json,                'debug': debug,                'rate': rate,                'pitch': pitch,                'ssml': ssml,            }
-            hooks.on_save(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_save' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {            'text': text,            'options': options,            'output': output,            'format': format,            'voice': voice,            'json': json,            'debug': debug,            'rate': rate,            'pitch': pitch,            'ssml': ssml,        }
+        invoke_hook(ctx, 'on_save', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('voices')
@@ -294,13 +293,8 @@ def save(ctx, text, options, output, format, voice, json, debug, rate, pitch, ss
 def voices(ctx, args):
     """Explore and test available voices"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_voices'):
-            kwargs = {                'args': args,            }
-            hooks.on_voices(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_voices' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {            'args': args,        }
+        invoke_hook(ctx, 'on_voices', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('providers')
@@ -309,13 +303,8 @@ def voices(ctx, args):
 def providers(ctx, provider_name):
     """Show available providers and their status"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_providers'):
-            kwargs = {                'provider_name': provider_name,            }
-            hooks.on_providers(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_providers' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {            'provider_name': provider_name,        }
+        invoke_hook(ctx, 'on_providers', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('install')
@@ -324,13 +313,8 @@ def providers(ctx, provider_name):
 def install(ctx, args):
     """Install required provider dependencies"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_install'):
-            kwargs = {                'args': args,            }
-            hooks.on_install(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_install' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {            'args': args,        }
+        invoke_hook(ctx, 'on_install', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('info')
@@ -339,13 +323,8 @@ def install(ctx, args):
 def info(ctx, provider):
     """Detailed provider information"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_info'):
-            kwargs = {                'provider': provider,            }
-            hooks.on_info(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_info' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {            'provider': provider,        }
+        invoke_hook(ctx, 'on_info', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('document')
@@ -366,13 +345,8 @@ def info(ctx, provider):
 def document(ctx, document_path, options, save, output, format, voice, json, debug, doc_format, ssml_platform, emotion_profile, rate, pitch):
     """Convert documents to speech"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_document'):
-            kwargs = {                'document_path': document_path,                'options': options,                'save': save,                'output': output,                'format': format,                'voice': voice,                'json': json,                'debug': debug,                'doc_format': doc_format,                'ssml_platform': ssml_platform,                'emotion_profile': emotion_profile,                'rate': rate,                'pitch': pitch,            }
-            hooks.on_document(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_document' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {            'document_path': document_path,            'options': options,            'save': save,            'output': output,            'format': format,            'voice': voice,            'json': json,            'debug': debug,            'doc_format': doc_format,            'ssml_platform': ssml_platform,            'emotion_profile': emotion_profile,            'rate': rate,            'pitch': pitch,        }
+        invoke_hook(ctx, 'on_document', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.group('voice')
@@ -386,13 +360,8 @@ def voice_group(ctx):
 def voice_load(ctx, voice_files):
     """Load voices into memory for faster access"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_load'):
-            kwargs = {                'voice_files': voice_files,            }
-            hooks.on_load(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_load' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {            'voice_files': voice_files,        }
+        invoke_hook(ctx, 'on_load', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 
@@ -403,13 +372,8 @@ def voice_load(ctx, voice_files):
 def voice_unload(ctx, voice_files, all):
     """Remove voices from memory"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_unload'):
-            kwargs = {                'voice_files': voice_files,                'all': all,            }
-            hooks.on_unload(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_unload' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {            'voice_files': voice_files,            'all': all,        }
+        invoke_hook(ctx, 'on_unload', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 
@@ -418,13 +382,8 @@ def voice_unload(ctx, voice_files, all):
 def voice_status(ctx):
     """Show currently loaded voices and system status"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_status'):
-            kwargs = {            }
-            hooks.on_status(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_status' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {        }
+        invoke_hook(ctx, 'on_status', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('status')
@@ -432,13 +391,8 @@ def voice_status(ctx):
 def status(ctx):
     """Check system and provider health"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_status'):
-            kwargs = {            }
-            hooks.on_status(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_status' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {        }
+        invoke_hook(ctx, 'on_status', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 @cli.command('config')
@@ -449,13 +403,8 @@ def status(ctx):
 def config(ctx, action, key, value):
     """Adjust CLI settings and API keys"""
     try:
-        hooks = get_hooks()
-        if hooks and hasattr(hooks, 'on_config'):
-            kwargs = {                'action': action,                'key': key,                'value': value,            }
-            hooks.on_config(ctx=ctx, **kwargs)
-        else:
-            logger.error(f"Hook 'on_config' not implemented in cli_hooks.py")
-            sys.exit(1)
+        kwargs = {            'action': action,            'key': key,            'value': value,        }
+        invoke_hook(ctx, 'on_config', kwargs)
     except Exception as e:
         handle_error(e, ctx.verbose)
 
