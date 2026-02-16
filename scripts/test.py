@@ -7,8 +7,20 @@ import argparse
 import os
 import subprocess
 import sys
+import tomllib
+from pathlib import Path
 
-VERSION = "1.0.0"
+
+def _get_version() -> str:
+    try:
+        with open(Path(__file__).resolve().parents[1] / "pyproject.toml", "rb") as f:
+            data = tomllib.load(f)
+        return str(data["project"]["version"])
+    except Exception:
+        return "unknown"
+
+
+VERSION = _get_version()
 
 
 def show_examples():
