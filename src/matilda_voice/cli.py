@@ -8,21 +8,24 @@ This is a consolidated Python CLI file with all utilities embedded.
 Generated from: goobits.yaml
 """
 
-import logging
-import os
 import sys
+import os
+import logging
 import traceback
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional, List
 
 import click
-
 try:
     import tomllib
 except ImportError:  # pragma: no cover
-    import toml as tomllib
-import toml
-
+    tomllib = None
+try:
+    import toml
+except ImportError:  # pragma: no cover
+    toml = None
+if tomllib is None and toml is None:  # pragma: no cover
+    raise RuntimeError("No TOML parser available. Install 'toml' package or use Python 3.11+.")
 # ============================================================================
 # EMBEDDED LOGGER
 # ============================================================================
@@ -93,8 +96,9 @@ class ConfigManager:
         """Load configuration from file."""
         if self.config_file.exists():
             try:
+                parser = tomllib if tomllib is not None else toml
                 with open(self.config_file, "rb") as f:
-                    full_config = tomllib.load(f)
+                    full_config = parser.load(f)
                 section = full_config.get(self.section)
                 if isinstance(section, dict):
                     return section
@@ -107,13 +111,17 @@ class ConfigManager:
     def save_config(self) -> bool:
         """Save configuration to file."""
         try:
+            parser = tomllib if tomllib is not None else toml
             if self.config_file.exists():
                 with open(self.config_file, "rb") as f:
-                    full_config = tomllib.load(f)
+                    full_config = parser.load(f)
             else:
                 full_config = {}
 
             full_config[self.section] = self.config
+            if toml is None:
+                logger.error("Failed to save config: 'toml' package is required for writing TOML files.")
+                return False
             with open(self.config_file, "w", encoding="utf-8") as f:
                 f.write(toml.dumps(full_config))
             return True
@@ -210,7 +218,15 @@ def load_hooks():
         logger.warning("      print('Build command implementation')")
         return None
 
-hooks = load_hooks()
+_HOOKS_UNSET = object()
+_hooks = _HOOKS_UNSET
+
+def get_hooks():
+    """Lazily load hooks to avoid import-time side effects."""
+    global _hooks
+    if _hooks is _HOOKS_UNSET:
+        _hooks = load_hooks()
+    return _hooks
 
 # ============================================================================
 # CLI COMMANDS
@@ -239,11 +255,12 @@ def cli(ctx, verbose, debug, config):
 def speak(ctx, text, options, voice, rate, pitch, debug, ssml):
     """Speak text aloud"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_speak'):
             kwargs = {                'text': text,                'options': options,                'voice': voice,                'rate': rate,                'pitch': pitch,                'debug': debug,                'ssml': ssml,            }
             hooks.on_speak(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_speak' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_speak' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -262,11 +279,12 @@ def speak(ctx, text, options, voice, rate, pitch, debug, ssml):
 def save(ctx, text, options, output, format, voice, json, debug, rate, pitch, ssml):
     """Save text as an audio file"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_save'):
             kwargs = {                'text': text,                'options': options,                'output': output,                'format': format,                'voice': voice,                'json': json,                'debug': debug,                'rate': rate,                'pitch': pitch,                'ssml': ssml,            }
             hooks.on_save(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_save' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_save' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -276,11 +294,12 @@ def save(ctx, text, options, output, format, voice, json, debug, rate, pitch, ss
 def voices(ctx, args):
     """Explore and test available voices"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_voices'):
             kwargs = {                'args': args,            }
             hooks.on_voices(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_voices' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_voices' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -290,11 +309,12 @@ def voices(ctx, args):
 def providers(ctx, provider_name):
     """Show available providers and their status"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_providers'):
             kwargs = {                'provider_name': provider_name,            }
             hooks.on_providers(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_providers' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_providers' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -304,11 +324,12 @@ def providers(ctx, provider_name):
 def install(ctx, args):
     """Install required provider dependencies"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_install'):
             kwargs = {                'args': args,            }
             hooks.on_install(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_install' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_install' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -318,11 +339,12 @@ def install(ctx, args):
 def info(ctx, provider):
     """Detailed provider information"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_info'):
             kwargs = {                'provider': provider,            }
             hooks.on_info(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_info' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_info' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -344,11 +366,12 @@ def info(ctx, provider):
 def document(ctx, document_path, options, save, output, format, voice, json, debug, doc_format, ssml_platform, emotion_profile, rate, pitch):
     """Convert documents to speech"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_document'):
             kwargs = {                'document_path': document_path,                'options': options,                'save': save,                'output': output,                'format': format,                'voice': voice,                'json': json,                'debug': debug,                'doc_format': doc_format,                'ssml_platform': ssml_platform,                'emotion_profile': emotion_profile,                'rate': rate,                'pitch': pitch,            }
             hooks.on_document(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_document' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_document' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -363,11 +386,12 @@ def voice_group(ctx):
 def voice_load(ctx, voice_files):
     """Load voices into memory for faster access"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_load'):
             kwargs = {                'voice_files': voice_files,            }
             hooks.on_load(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_load' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_load' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -379,11 +403,12 @@ def voice_load(ctx, voice_files):
 def voice_unload(ctx, voice_files, all):
     """Remove voices from memory"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_unload'):
             kwargs = {                'voice_files': voice_files,                'all': all,            }
             hooks.on_unload(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_unload' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_unload' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -393,11 +418,12 @@ def voice_unload(ctx, voice_files, all):
 def voice_status(ctx):
     """Show currently loaded voices and system status"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_status'):
             kwargs = {            }
             hooks.on_status(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_status' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_status' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -406,11 +432,12 @@ def voice_status(ctx):
 def status(ctx):
     """Check system and provider health"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_status'):
             kwargs = {            }
             hooks.on_status(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_status' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_status' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -422,11 +449,12 @@ def status(ctx):
 def config(ctx, action, key, value):
     """Adjust CLI settings and API keys"""
     try:
+        hooks = get_hooks()
         if hooks and hasattr(hooks, 'on_config'):
             kwargs = {                'action': action,                'key': key,                'value': value,            }
             hooks.on_config(ctx=ctx, **kwargs)
         else:
-            logger.error("Hook 'on_config' not implemented in cli_hooks.py")
+            logger.error(f"Hook 'on_config' not implemented in cli_hooks.py")
             sys.exit(1)
     except Exception as e:
         handle_error(e, ctx.verbose)
@@ -444,9 +472,6 @@ def main():
         cli()
     except Exception as e:
         handle_error(e, '--verbose' in sys.argv or '--debug' in sys.argv)
-
-# Alias for compatibility with different entry point names
-cli_entry = main
 
 if __name__ == '__main__':
     main()

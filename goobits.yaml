@@ -71,7 +71,7 @@ messages:
 # CLI fields for cli.py generation
 cli:
   name: "MATILDA VOICE CLI"
-  version: "1.1.4"
+  version: "1.2.0"
   display_version: true
   tagline: "Multi-provider text-to-speech with voice cloning"
   description: "Convert text into natural speech with AI-powered auto-selection and real-time streaming."
