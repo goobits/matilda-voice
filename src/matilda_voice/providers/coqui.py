@@ -41,7 +41,7 @@ class CoquiProvider(TTSProvider):
             return
 
         try:
-            from TTS.api import TTS  # type: ignore
+            from TTS.api import TTS
 
             print(f"Loading Coqui TTS model: {target_model}...")
 
@@ -64,7 +64,7 @@ class CoquiProvider(TTSProvider):
     def _has_cuda(self) -> bool:
         """Check if CUDA is available for GPU acceleration."""
         try:
-            import torch  # type: ignore
+            import torch
 
             return bool(torch.cuda.is_available())
         except ImportError:
@@ -189,7 +189,7 @@ class CoquiProvider(TTSProvider):
     def list_available_models() -> list[str]:
         """List available Coqui TTS models."""
         try:
-            from TTS.api import TTS  # type: ignore
+            from TTS.api import TTS
 
             return [str(model) for model in TTS().list_models()]
         except ImportError:

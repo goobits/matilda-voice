@@ -17,7 +17,7 @@ class ChatterboxProvider(TTSProvider):
     def _lazy_load(self) -> None:
         if self.tts is None:
             try:
-                from chatterbox.tts import ChatterboxTTS  # type: ignore
+                from chatterbox.tts import ChatterboxTTS
 
                 print("Loading Chatterbox (Resemble AI) model...")
                 # Use GPU if available for much faster generation
@@ -35,7 +35,7 @@ class ChatterboxProvider(TTSProvider):
 
     def _has_cuda(self) -> bool:
         try:
-            import torch  # type: ignore
+            import torch
 
             return bool(torch.cuda.is_available())
         except ImportError:
@@ -115,7 +115,7 @@ class ChatterboxProvider(TTSProvider):
         else:
             # Save to file
             if output_format == "wav":
-                import torchaudio as ta  # type: ignore
+                import torchaudio as ta
 
                 if self.tts is not None and output_path is not None:
                     ta.save(output_path, wav, self.tts.sr)
@@ -124,7 +124,7 @@ class ChatterboxProvider(TTSProvider):
                 with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                     wav_path = tmp.name
 
-                import torchaudio as ta  # type: ignore
+                import torchaudio as ta
 
                 if self.tts is not None:
                     ta.save(wav_path, wav, self.tts.sr)
@@ -138,7 +138,7 @@ class ChatterboxProvider(TTSProvider):
         import io
         import wave
 
-        import numpy as np  # type: ignore
+        import numpy as np
 
         from ..internal.audio_utils import StreamingPlayer
 

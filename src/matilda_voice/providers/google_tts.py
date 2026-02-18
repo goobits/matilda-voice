@@ -69,7 +69,7 @@ class GoogleTTSProvider(TTSProvider):
                 try:
                     import json
 
-                    from google.cloud import texttospeech  # type: ignore
+                    from google.cloud import texttospeech
 
                     credentials_info = json.loads(api_key)
                     self._client = texttospeech.TextToSpeechClient.from_service_account_info(credentials_info)
@@ -85,7 +85,7 @@ class GoogleTTSProvider(TTSProvider):
                 try:
                     import json
 
-                    from google.cloud import texttospeech  # type: ignore
+                    from google.cloud import texttospeech
 
                     credentials_info = json.loads("{" + api_key + "}")
                     self._client = texttospeech.TextToSpeechClient.from_service_account_info(credentials_info)
@@ -264,7 +264,7 @@ class GoogleTTSProvider(TTSProvider):
 
             if self._auth_method == "service_account" and client:
                 # Use Google Cloud client library for service account
-                from google.cloud import texttospeech  # type: ignore
+                from google.cloud import texttospeech
 
                 # Prepare synthesis input
                 if use_ssml:

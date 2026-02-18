@@ -55,9 +55,12 @@ python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_unused_ignores = true
 cache_dir = ".artifacts/cache/mypy"
 exclude = "(^|/)cli\\.py$$"
-disable_error_code = [ "import-untyped",]
+disable_error_code = [ "import-untyped", "import-not-found",]
 
 [tool.setuptools.package-dir]
 "" = "src"
@@ -102,3 +105,16 @@ module = [
   "matilda_voice.cli",
 ]
 ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+  "TTS",
+  "TTS.*",
+  "torchaudio",
+  "torchaudio.*",
+  "google",
+  "google.*",
+  "google.cloud",
+  "google.cloud.*",
+]
+ignore_missing_imports = true

@@ -28,7 +28,7 @@ class EdgeTTSProvider(TTSProvider):
     def _lazy_load(self) -> None:
         if self.edge_tts is None:
             try:
-                import edge_tts  # type: ignore
+                import edge_tts
 
                 self.edge_tts = edge_tts
             except ImportError:

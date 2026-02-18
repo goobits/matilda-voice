@@ -49,7 +49,7 @@ if _I18N_PATH and str(_I18N_PATH) not in sys.path:
     sys.path.insert(0, str(_I18N_PATH))
 
 try:
-    from base_loader import I18nLoader as ExternalI18nLoader  # type: ignore[import-not-found]
+    from base_loader import I18nLoader as ExternalI18nLoader
     from base_loader import get_monorepo_locales_path
 
     I18nLoader = ExternalI18nLoader

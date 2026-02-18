@@ -44,7 +44,7 @@ class OpenAITTSProvider(TTSProvider):
         """Return OpenAI-specific retryable exceptions if available."""
         retry_exceptions: tuple[type[BaseException], ...] = (ConnectionError, TimeoutError)
         try:
-            from openai import APIConnectionError, APITimeoutError, RateLimitError  # type: ignore
+            from openai import APIConnectionError, APITimeoutError, RateLimitError
 
             retry_exceptions = retry_exceptions + (APIConnectionError, APITimeoutError, RateLimitError)
         except ImportError:
@@ -55,7 +55,7 @@ class OpenAITTSProvider(TTSProvider):
         """Get OpenAI client, initializing if needed."""
         if self._client is None:
             try:
-                from openai import OpenAI  # type: ignore
+                from openai import OpenAI
             except ImportError:
                 raise DependencyError("OpenAI library not installed. Install with: pip install openai") from None
 
