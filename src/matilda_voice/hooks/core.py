@@ -16,13 +16,13 @@ from .utils import (
 
 def on_speak(
     text: Optional[str],
-    options: tuple,
+    options: tuple[str, ...],
     voice: Optional[str],
     rate: Optional[str],
     pitch: Optional[str],
     debug: bool,
     ssml: bool = False,
-    **kwargs,
+    **kwargs: Any,
 ) -> int:
     """Handle the speak command"""
     try:
@@ -127,7 +127,7 @@ def on_speak(
 
 def on_save(
     text: Optional[str],
-    options: tuple,
+    options: tuple[str, ...],
     output: Optional[str],
     format: Optional[str],
     voice: Optional[str],
@@ -136,7 +136,7 @@ def on_save(
     rate: Optional[str],
     pitch: Optional[str],
     ssml: bool = False,
-    **kwargs,
+    **kwargs: Any,
 ) -> int:
     """Handle the save command"""
     try:

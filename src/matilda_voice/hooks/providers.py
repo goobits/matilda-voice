@@ -2,7 +2,7 @@
 """Hook handlers for TTS CLI."""
 
 import sys
-from typing import Optional
+from typing import Any, Optional
 
 from .utils import (
     PROVIDER_SHORTCUTS,
@@ -13,7 +13,7 @@ from .utils import (
 )
 
 
-def on_voices(args: tuple, **kwargs) -> int:
+def on_voices(args: tuple[str, ...], **kwargs: Any) -> int:
     """Handle the voices command"""
     import os
 
@@ -40,7 +40,7 @@ def on_voices(args: tuple, **kwargs) -> int:
         raise
 
 
-def on_providers(provider_name: Optional[str], **kwargs) -> int:
+def on_providers(provider_name: Optional[str], **kwargs: Any) -> int:
     """Handle the providers command"""
     try:
         engine = get_engine()
@@ -69,7 +69,7 @@ def on_providers(provider_name: Optional[str], **kwargs) -> int:
         return 1
 
 
-def on_install(args: tuple, **kwargs) -> int:
+def on_install(args: tuple[str, ...], **kwargs: Any) -> int:
     """Handle the install command"""
     try:
         import subprocess
@@ -181,7 +181,7 @@ def on_install(args: tuple, **kwargs) -> int:
         return 1
 
 
-def on_info(provider: Optional[str], **kwargs) -> int:
+def on_info(provider: Optional[str], **kwargs: Any) -> int:
     """Handle the info command"""
     try:
         engine = get_engine()

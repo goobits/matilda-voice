@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Hook handlers for Voice CLI."""
 
-from typing import Optional
+from typing import Any, Optional
 
 from matilda_voice.i18n import t, t_common
 
 from .utils import exit_with_message, get_engine
 
 
-def _get_config_functions():
+def _get_config_functions() -> tuple[Any, Any]:
     """Late-bind config functions to allow patching."""
     from matilda_voice.internal.config import load_config, save_config
 
     return load_config, save_config
 
 
-def on_status(**kwargs) -> int:
+def on_status(**kwargs: Any) -> int:
     """Handle the status command"""
     try:
         load_config, save_config = _get_config_functions()
@@ -105,7 +105,7 @@ def on_status(**kwargs) -> int:
         return 1
 
 
-def on_config(action: Optional[str], key: Optional[str], value: Optional[str], **kwargs) -> int:
+def on_config(action: Optional[str], key: Optional[str], value: Optional[str], **kwargs: Any) -> int:
     """Handle the config command"""
     try:
         load_config, save_config = _get_config_functions()

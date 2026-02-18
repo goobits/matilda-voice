@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Hook handlers for TTS CLI."""
 
+from typing import Any
 
-def on_voice_load(voice_files: tuple, **kwargs) -> int:
+
+def on_voice_load(voice_files: tuple[str, ...], **kwargs: Any) -> int:
     """Handle the voice load command"""
     try:
         from pathlib import Path
@@ -67,7 +69,7 @@ def on_voice_load(voice_files: tuple, **kwargs) -> int:
         return 1
 
 
-def on_voice_unload(voice_files: tuple, all: bool, **kwargs) -> int:
+def on_voice_unload(voice_files: tuple[str, ...], all: bool, **kwargs: Any) -> int:
     """Handle the voice unload command"""
     try:
         from pathlib import Path
@@ -148,7 +150,7 @@ def on_voice_unload(voice_files: tuple, all: bool, **kwargs) -> int:
         return 1
 
 
-def on_voice_status(**kwargs) -> int:
+def on_voice_status(**kwargs: Any) -> int:
     """Handle the voice status command"""
     try:
         from pathlib import Path

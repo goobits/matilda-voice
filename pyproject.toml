@@ -54,7 +54,7 @@ extend-exclude = [ "src/matilda_voice/cli.py",]
 python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = false
+disallow_untyped_defs = true
 cache_dir = ".artifacts/cache/mypy"
 exclude = "(^|/)cli\\.py$$"
 disable_error_code = [ "import-untyped",]
@@ -102,18 +102,3 @@ module = [
   "matilda_voice.cli",
 ]
 ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = [
-  "matilda_voice.core",
-  "matilda_voice.document_processing.performance_cache",
-  "matilda_voice.internal.http_retry",
-  "matilda_voice.providers.azure_tts",
-  "matilda_voice.providers.chatterbox",
-  "matilda_voice.providers.coqui",
-  "matilda_voice.providers.elevenlabs",
-  "matilda_voice.providers.openai_tts",
-  "matilda_voice.voice_browser.*",
-  "matilda_voice.internal.audio_utils",
-]
-disallow_untyped_defs = true

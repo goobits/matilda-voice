@@ -8,7 +8,7 @@ from .utils import exit_with_message, get_engine
 
 def on_document(
     document_path: str,
-    options: tuple,
+    options: tuple[str, ...],
     save: bool,
     output: Optional[str],
     format: Optional[str],
@@ -20,7 +20,7 @@ def on_document(
     emotion_profile: str,
     rate: Optional[str],
     pitch: Optional[str],
-    **kwargs,
+    **kwargs: Any,
 ) -> int:
     """Handle the document command"""
     try:

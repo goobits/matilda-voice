@@ -21,10 +21,10 @@ import secrets
 import tempfile
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Optional
+from typing import Any, Awaitable, Callable, Optional
 
 from aiohttp import web
-from aiohttp.web import Request, Response
+from aiohttp.web import Request, Response, StreamResponse
 from matilda_transport import ensure_pipe_supported, prepare_unix_socket, resolve_transport
 
 from .internal.security import get_allowed_origins
@@ -48,7 +48,7 @@ API_TOKEN = get_or_create_token()
 
 
 @web.middleware
-async def auth_middleware(request: Request, handler):
+async def auth_middleware(request: Request, handler: Callable[[Request], Awaitable[StreamResponse]]) -> StreamResponse:
     """Middleware to enforce token authentication."""
     # Allow public endpoints
     if request.path in ["/", "/health", "/providers"]:
@@ -478,7 +478,7 @@ def create_app() -> web.Application:
     return app
 
 
-def run_server(host: str = "0.0.0.0", port: int = 8771):
+def run_server(host: str = "0.0.0.0", port: int = 8771) -> None:
     """Run the HTTP server."""
     app = create_app()
     transport = resolve_transport("MATILDA_VOICE_TRANSPORT", "MATILDA_VOICE_ENDPOINT", host, port)
@@ -497,7 +497,7 @@ def run_server(host: str = "0.0.0.0", port: int = 8771):
     if transport.transport == "pipe":
         ensure_pipe_supported(transport)
 
-        async def run_pipe():
+        async def run_pipe() -> None:
             runner = web.AppRunner(app)
             await runner.setup()
             site = web.NamedPipeSite(runner, transport.endpoint)
@@ -510,7 +510,7 @@ def run_server(host: str = "0.0.0.0", port: int = 8771):
     web.run_app(app, host=transport.host, port=transport.port, print=None)
 
 
-def main():
+def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(description="Voice TTS HTTP Server")
     parser.add_argument("--host", default="0.0.0.0", help="Host to bind to")
