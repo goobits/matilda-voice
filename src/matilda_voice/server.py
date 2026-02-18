@@ -21,6 +21,7 @@ import secrets
 import tempfile
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Optional
 
 from aiohttp import web
 from aiohttp.web import Request, Response
@@ -109,7 +110,7 @@ async def auth_middleware(request: Request, handler):
 ALLOWED_ORIGINS = get_allowed_origins()
 
 
-def add_cors_headers(response: Response, request: Request = None) -> Response:
+def add_cors_headers(response: Response, request: Optional[Request] = None) -> Response:
     """Add CORS headers to response.
 
     Only sets Access-Control-Allow-Origin when:
@@ -136,7 +137,7 @@ def should_validate() -> bool:
     return os.getenv("MATILDA_SCHEMA_VALIDATE", "").lower() in {"1", "true", "yes", "on"}
 
 
-def validate_response(model, payload: dict) -> None:
+def validate_response(model: Any, payload: dict[str, Any]) -> None:
     if not should_validate():
         return
     model.model_validate(payload)
@@ -144,12 +145,12 @@ def validate_response(model, payload: dict) -> None:
 
 def ok_response(
     task: str,
-    payload: dict,
+    payload: dict[str, Any],
     request: Request,
-    model=None,
+    model: Any = None,
     provider: str | None = None,
     voice_model: str | None = None,
-    usage: dict | None = None,
+    usage: dict[str, Any] | None = None,
 ) -> Response:
     response_payload = {
         "request_id": str(uuid.uuid4()),
@@ -276,11 +277,11 @@ async def handle_speak(request: Request) -> Response:
 
         # Run synthesis (this plays audio)
         loop = asyncio.get_event_loop()
-        options = ()
+        options: tuple[()] | tuple[str, str] = ()
         text_arg = text
         if provider:
             shortcut = provider if provider.startswith("@") else f"@{provider}"
-            options = (shortcut, text)
+            options = (shortcut, str(text))
             text_arg = None
         await loop.run_in_executor(
             None,
@@ -357,11 +358,11 @@ async def handle_synthesize(request: Request) -> Response:
         try:
             # Run synthesis to file
             loop = asyncio.get_event_loop()
-            options = ()
+            options: tuple[()] | tuple[str, str] = ()
             text_arg = text
             if provider:
                 shortcut = provider if provider.startswith("@") else f"@{provider}"
-                options = (shortcut, text)
+                options = (shortcut, str(text))
                 text_arg = None
             await loop.run_in_executor(
                 None,

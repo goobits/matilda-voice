@@ -118,7 +118,9 @@ class TTSEngine:
             elif not voice:
                 # No voice specified - use provider's default or None
                 # Don't use config default if it's for a different provider
-                default_voice = config.get("voice", f"{CONFIG_DEFAULTS['default_provider']}:{CONFIG_DEFAULTS['default_voice']}")
+                default_voice = config.get(
+                    "voice", f"{CONFIG_DEFAULTS['default_provider']}:{CONFIG_DEFAULTS['default_voice']}"
+                )
                 default_provider, default_voice_name = parse_voice_setting(default_voice)
                 if default_provider == provider_name:
                     voice = default_voice_name
@@ -132,12 +134,15 @@ class TTSEngine:
                     voice = voice_name
             else:
                 # Use default voice from config
-                default_voice = config.get("voice", f"{CONFIG_DEFAULTS['default_provider']}:{CONFIG_DEFAULTS['default_voice']}")
-                provider_name, voice = parse_voice_setting(default_voice)
+                default_voice = config.get(
+                    "voice", f"{CONFIG_DEFAULTS['default_provider']}:{CONFIG_DEFAULTS['default_voice']}"
+                )
+                provider_name, voice = parse_voice_setting(str(default_voice))
 
         if not provider_name:
             # Fallback to default provider if no provider detected
-            provider_name = CONFIG_DEFAULTS["default_provider"]
+            provider_name = str(CONFIG_DEFAULTS["default_provider"])
+        assert provider_name is not None
 
         # Load and instantiate provider
         try:
@@ -321,7 +326,7 @@ class TTSEngine:
         Returns:
             Dictionary with provider information (never None)
         """
-        info = {
+        info: Dict[str, Any] = {
             "name": provider_name,
             "description": f"{provider_name.title()} TTS Provider",
             "sample_voices": [],
@@ -389,7 +394,6 @@ class TTSEngine:
         # Map registry names to config API key names
         mapping = {"openai_tts": "openai", "google_tts": "google", "elevenlabs": "elevenlabs"}
         return mapping.get(provider_name, provider_name)
-
 
     def test_provider(self, provider_name: str) -> Dict[str, Any]:
         """Test a provider's availability and basic functionality.

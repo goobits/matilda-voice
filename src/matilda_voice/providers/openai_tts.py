@@ -38,7 +38,7 @@ class OpenAITTSProvider(TTSProvider):
 
     def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
-        self._client = None
+        self._client: Any | None = None
 
     def _get_retry_exceptions(self) -> tuple[type[BaseException], ...]:
         """Return OpenAI-specific retryable exceptions if available."""

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Hook handlers for TTS CLI."""
 
-from typing import Any, Optional
+from typing import Any, NoReturn, Optional
 
 import click
 
@@ -63,7 +63,7 @@ def get_engine() -> Any:
         return initialize_tts_engine(PROVIDERS_REGISTRY)
 
 
-def exit_with_message(message: str, exit_code: int = 1, show_usage: bool = False) -> None:
+def exit_with_message(message: str, exit_code: int = 1, show_usage: bool = False) -> NoReturn:
     if message:
         print(message)
     if show_usage:

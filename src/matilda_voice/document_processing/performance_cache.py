@@ -25,7 +25,7 @@ RE_SENTENCE_SPLIT = re.compile(r"[.!?]+")
 
 def _serialize_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     """Recursively serialize metadata, handling nested SemanticElements."""
-    result = {}
+    result: Dict[str, Any] = {}
     for key, value in metadata.items():
         if isinstance(value, SemanticElement):
             result[key] = _serialize_element(value)
@@ -50,7 +50,7 @@ def _serialize_element(element: SemanticElement) -> Dict[str, Any]:
 
 def _deserialize_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     """Recursively deserialize metadata, reconstructing nested SemanticElements."""
-    result = {}
+    result: Dict[str, Any] = {}
     for key, value in metadata.items():
         if isinstance(value, dict) and "type" in value and "content" in value:
             # This looks like a serialized SemanticElement

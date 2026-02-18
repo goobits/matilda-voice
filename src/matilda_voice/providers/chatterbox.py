@@ -162,7 +162,7 @@ class ChatterboxProvider(TTSProvider):
             buffer.seek(0)
             player = StreamingPlayer(provider_name="Chatterbox")
             # Create a generator that yields the buffer content as a single chunk
-            player.play(iter([buffer.getvalue()]))
+            player.play_chunks(iter([buffer.getvalue()]))
 
             self.logger.debug("Audio streaming completed")
 
@@ -179,7 +179,7 @@ class ChatterboxProvider(TTSProvider):
 
             # Stream using StreamingPlayer
             player = StreamingPlayer(provider_name="Chatterbox")
-            player.play(iter([audio_data]))
+            player.play_chunks(iter([audio_data]))
 
             self.logger.debug("Audio streaming completed")
 

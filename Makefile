@@ -1,6 +1,6 @@
 # Matilda Voice Development Makefile
 
-.PHONY: help test test-cov test-fast lint format type-check quality clean install dev
+.PHONY: help test test-cov test-fast lint format format-check type-check quality clean install dev
 
 help: ## Show this help message
 	@echo "Matilda Voice Development Commands:"
@@ -8,13 +8,13 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 test: ## Run all tests
-	@python3 -m pytest tests/
+	@./scripts/test.py all --force
 
 test-cov: ## Run tests with coverage report
-	@python3 -m pytest tests/ --cov=matilda_voice --cov-report=term-missing --cov-report=html:.artifacts/htmlcov
+	@./scripts/test.py all --coverage --force
 
 test-fast: ## Run tests quickly (no coverage)
-	@python3 -m pytest tests/ -x -q
+	@./scripts/test.py unit --force
 
 lint: ## Run linting with ruff
 	@echo "Running linter..."
@@ -22,13 +22,17 @@ lint: ## Run linting with ruff
 
 format: ## Format code with black
 	@echo "Formatting code..."
-	@black src/matilda_voice/ tests/ --line-length 120
+	@black src/matilda_voice/ tests/ --line-length 120 --force-exclude 'cli\.py$$'
+
+format-check: ## Check formatting (non-mutating)
+	@echo "Checking format..."
+	@black src/matilda_voice/ tests/ --line-length 120 --check --force-exclude 'cli\.py$$'
 
 type-check: ## Run type checking with mypy
 	@echo "Running type checker..."
 	@mypy src/matilda_voice/
 
-quality: format lint type-check ## Run all code quality checks
+quality: format-check lint type-check ## Run all code quality checks
 	@echo "All quality checks completed!"
 
 clean: ## Clean up build artifacts and cache

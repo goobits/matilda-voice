@@ -292,7 +292,7 @@ class ElevenLabsProvider(TTSProvider):
                     provider_name="ElevenLabs",
                     format_args=["-f", "mp3"],
                 )
-                player.play(response.iter_bytes(chunk_size=get_config_value("http_streaming_chunk_size")))
+                player.play_chunks(response.iter_bytes(chunk_size=get_config_value("http_streaming_chunk_size")))
 
         except (httpx.RequestError, ConnectionError, ValueError, RuntimeError) as e:
             self.logger.error(f"ElevenLabs TTS streaming failed: {e}")

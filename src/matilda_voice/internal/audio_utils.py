@@ -1,12 +1,14 @@
 """Shared audio utilities for TTS providers to avoid code duplication."""
 
 import asyncio
+import contextlib
 import logging
 import os
 import subprocess
 import tempfile
 import threading
 import time
+import wave
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, Tuple
 
 from ..exceptions import AudioPlaybackError, DependencyError
@@ -950,9 +952,6 @@ def normalize_audio_path(path: str, default_format: str = "wav") -> str:
     return path
 
 
-import wave
-import contextlib
-
 def _get_wav_duration(audio_path: str) -> Optional[float]:
     """Get duration of WAV file using standard library.
 
@@ -960,7 +959,7 @@ def _get_wav_duration(audio_path: str) -> Optional[float]:
         Duration in seconds, or None if failed/not a wav.
     """
     try:
-        with contextlib.closing(wave.open(audio_path, 'rb')) as f:
+        with contextlib.closing(wave.open(audio_path, "rb")) as f:
             frames = f.getnframes()
             rate = f.getframerate()
             if rate > 0:

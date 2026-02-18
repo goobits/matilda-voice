@@ -1,12 +1,14 @@
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import asyncio
-from unittest.mock import patch, MagicMock, AsyncMock
+
 from matilda_voice.internal import audio_utils
+
 
 def setup_function():
     # Reset cache before each test
     audio_utils._AUDIO_ENV_CACHE = None
+
 
 def test_check_audio_environment_caching():
     """Test that check_audio_environment uses cache."""
@@ -24,18 +26,24 @@ def test_check_audio_environment_caching():
             # Second call - should use cache
             result2 = audio_utils.check_audio_environment()
             assert result2["available"] is True
-            assert mock_run.call_count == 1 # Still 1
+            assert mock_run.call_count == 1  # Still 1
 
             # Third call with force_refresh
             result3 = audio_utils.check_audio_environment(force_refresh=True)
             assert result3["available"] is True
-            assert mock_run.call_count == 2 # Incremented
+            assert mock_run.call_count == 2  # Incremented
+
 
 @pytest.mark.asyncio
 async def test_check_audio_environment_async_caching():
     """Test that check_audio_environment_async uses cache directly."""
     # Pre-populate cache
-    audio_utils._AUDIO_ENV_CACHE = {"available": True, "reason": "Cached", "pulse_available": False, "alsa_available": False}
+    audio_utils._AUDIO_ENV_CACHE = {
+        "available": True,
+        "reason": "Cached",
+        "pulse_available": False,
+        "alsa_available": False,
+    }
 
     # We don't expect it to call check_audio_environment anymore, but it shouldn't call any subprocess either
     with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
@@ -44,6 +52,7 @@ async def test_check_audio_environment_async_caching():
 
         assert result["reason"] == "Cached"
         assert not mock_exec.called
+
 
 @pytest.mark.asyncio
 async def test_check_audio_environment_async_populates_cache():

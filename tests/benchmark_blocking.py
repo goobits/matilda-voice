@@ -1,13 +1,14 @@
 import asyncio
-import time
 import os
 import sys
+import time
 import wave
 
 # Add src to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 from matilda_voice.internal.audio_utils import get_audio_duration, get_audio_duration_async
+
 
 async def ticker():
     """Prints a tick every 0.1s to show loop activity."""
@@ -18,15 +19,16 @@ async def ticker():
     except asyncio.CancelledError:
         pass
 
+
 async def run_benchmark():
     test_file = "benchmark_test.wav"
 
     # Create a VALID wav file of 10 seconds
-    with wave.open(test_file, 'wb') as f:
+    with wave.open(test_file, "wb") as f:
         f.setnchannels(1)
         f.setsampwidth(2)
         f.setframerate(44100)
-        f.writeframes(b'\x00\x00' * 44100 * 10) # 10 seconds
+        f.writeframes(b"\x00\x00" * 44100 * 10)  # 10 seconds
 
     print("\n--- Benchmark Start (WAV Optimization) ---")
 
@@ -70,6 +72,7 @@ async def run_benchmark():
     # Clean up
     if os.path.exists(test_file):
         os.remove(test_file)
+
 
 if __name__ == "__main__":
     asyncio.run(run_benchmark())

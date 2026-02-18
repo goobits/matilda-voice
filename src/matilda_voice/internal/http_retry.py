@@ -12,7 +12,7 @@ import logging
 import random
 import threading
 import time
-from typing import Any, Callable, Iterable, Optional, Set, Tuple, Type
+from typing import Any, Callable, Iterable, Iterator, Optional, Set, Tuple, Type
 
 import httpx
 
@@ -146,7 +146,7 @@ def request_with_retry(
             idempotent=False,  # TTS synthesis creates new audio each time
         )
     """
-    last_exception: Optional[Exception] = None
+    last_exception: Optional[BaseException] = None
     last_response: Optional[httpx.Response] = None
     breaker = get_circuit_breaker(provider_name)
 
@@ -237,9 +237,9 @@ def stream_with_retry(
     idempotent: bool = True,
     provider_name: str = "API",
     **kwargs: Any,
-):
+) -> Iterator[httpx.Response]:
     """Context manager for streaming HTTP requests with retry logic."""
-    last_exception: Optional[Exception] = None
+    last_exception: Optional[BaseException] = None
     breaker = get_circuit_breaker(provider_name)
 
     for attempt in range(max_retries + 1):
@@ -323,7 +323,7 @@ def call_with_retry(
 
     This is for SDK calls that don't expose HTTP status codes.
     """
-    last_exception: Optional[Exception] = None
+    last_exception: Optional[BaseException] = None
     breaker = get_circuit_breaker(provider_name)
     retryable = tuple(retry_on) if retry_on is not None else (ConnectionError, TimeoutError)
 

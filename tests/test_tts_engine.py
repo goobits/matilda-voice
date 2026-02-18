@@ -23,6 +23,7 @@ class TestSystemTTSProviderDetection:
 
     def test_detect_espeak_available(self):
         with patch("subprocess.run") as mock_run:
+
             def side_effect(cmd, **kwargs):
                 if cmd[0] == "espeak":
                     return MagicMock(returncode=0)
@@ -77,9 +78,7 @@ class TestSystemTTSProviderSynthesize:
 
             provider.synthesize("Test text", None, stream=True, emotion="excited")
 
-            mock_run.assert_called_once_with(
-                ["espeak", "-p", "60", "-s", "180", "Test text"], capture_output=True
-            )
+            mock_run.assert_called_once_with(["espeak", "-p", "60", "-s", "180", "Test text"], capture_output=True)
 
     def test_synthesize_stream_festival(self):
         provider = make_provider(["festival"])

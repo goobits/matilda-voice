@@ -5,7 +5,7 @@ quality, region, and gender information.
 """
 
 import re
-from typing import List, Set, Tuple
+from typing import Tuple
 
 # Gender detection constants
 _FEMALE_INDICATORS = [
@@ -24,16 +24,7 @@ _FEMALE_INDICATORS = [
     "natasha",
 ]
 
-_MALE_INDICATORS = [
-    "guy",
-    "tony",
-    "brandon",
-    "christopher",
-    "eric",
-    "male",
-    "man",
-    "boy"
-]
+_MALE_INDICATORS = ["guy", "tony", "brandon", "christopher", "eric", "male", "man", "boy"]
 
 # Words that commonly appear in other words and need boundary checks
 _PROBLEMATIC_WORDS = {"man", "eric"}

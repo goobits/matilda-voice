@@ -154,7 +154,7 @@ class CoquiProvider(TTSProvider):
                 audio_data = f.read()
 
             player = StreamingPlayer(provider_name="Coqui")
-            player.play(iter([audio_data]))
+            player.play_chunks(iter([audio_data]))
 
             self.logger.debug("Audio streaming completed")
 
@@ -191,7 +191,7 @@ class CoquiProvider(TTSProvider):
         try:
             from TTS.api import TTS  # type: ignore
 
-            return TTS().list_models()
+            return [str(model) for model in TTS().list_models()]
         except ImportError:
             return ["(Coqui TTS not installed)"]
         except (RuntimeError, AttributeError):

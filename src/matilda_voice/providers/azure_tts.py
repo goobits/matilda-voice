@@ -91,7 +91,7 @@ class AzureTTSProvider(TTSProvider):
     def _normalize_voice(self, voice: Optional[str]) -> str:
         if voice:
             return normalize_voice_name(voice)
-        return get_config_value("default_voice", DEFAULT_VOICE)
+        return str(get_config_value("default_voice", DEFAULT_VOICE))
 
     def _extract_language_code(self, voice_name: str) -> str:
         parts = voice_name.split("-")

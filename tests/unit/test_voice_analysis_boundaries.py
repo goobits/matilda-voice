@@ -6,6 +6,7 @@ focusing on boundary detection for problematic words like "man" and "eric".
 
 from matilda_voice.voice_browser import analyze_voice
 
+
 def test_problematic_word_boundaries():
     """Test that problematic words respect word boundaries."""
 
@@ -35,6 +36,7 @@ def test_problematic_word_boundaries():
     # "generic" is not in indicators. "eric" is in indicators but problematic.
     assert gender == "U", "'generic' should not match 'eric'"
 
+
 def test_problematic_word_start_end():
     """Test problematic words at start/end of string."""
 
@@ -49,6 +51,7 @@ def test_problematic_word_start_end():
     # Exact match
     _, _, gender = analyze_voice("provider", "man")
     assert gender == "M", "Should match 'man' exact"
+
 
 def test_non_problematic_matches():
     """Test that non-problematic words still match partially."""

@@ -1,13 +1,17 @@
 import time
-import pytest
 from typing import List
+
+import pytest
+
 from matilda_voice.document_processing.performance_cache import PerformanceOptimizer
 from matilda_voice.voice_browser.voice_analyzer import analyze_voice
+
 
 # Define the unoptimized method (simulating the "before" state) for comparison
 def _split_by_paragraphs_unoptimized(self, content: str, max_chunk_size: int) -> List[str]:
     """Split content by paragraphs, then sentences if needed."""
     import re
+
     # Unoptimized: re.split called directly
     paragraphs = re.split(r"\n\s*\n", content)
 
@@ -39,6 +43,7 @@ def _split_by_paragraphs_unoptimized(self, content: str, max_chunk_size: int) ->
         chunks.append("\n\n".join(current_chunk_parts))
 
     return chunks
+
 
 class TestPerformance:
     @pytest.mark.benchmark
@@ -82,16 +87,26 @@ class TestPerformance:
         """Verify that full voice analysis is faster than unoptimized gender detection."""
         # Unoptimized implementation (inline for self-contained test)
         _FEMALE_INDICATORS = [
-            "emily", "jenny", "aria", "davis", "jane", "sarah", "amy", "emma",
-            "female", "woman", "libby", "clara", "natasha",
+            "emily",
+            "jenny",
+            "aria",
+            "davis",
+            "jane",
+            "sarah",
+            "amy",
+            "emma",
+            "female",
+            "woman",
+            "libby",
+            "clara",
+            "natasha",
         ]
-        _MALE_INDICATORS = [
-            "guy", "tony", "brandon", "christopher", "eric", "male", "man", "boy"
-        ]
+        _MALE_INDICATORS = ["guy", "tony", "brandon", "christopher", "eric", "male", "man", "boy"]
         _PROBLEMATIC_WORDS = {"man", "eric"}
 
         def detect_gender_unoptimized(voice_lower: str) -> str:
             import re
+
             # Female check
             for indicator in _FEMALE_INDICATORS:
                 if indicator in _PROBLEMATIC_WORDS:
