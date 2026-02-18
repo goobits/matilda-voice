@@ -3,12 +3,15 @@
 
 Runs unit tests (free/fast), integration tests (may need API keys), and e2e tests.
 """
+from __future__ import annotations
+
 import argparse
 import os
 import subprocess
 import sys
 import tomllib
 from pathlib import Path
+import venv
 
 
 def _get_version() -> str:
@@ -21,6 +24,50 @@ def _get_version() -> str:
 
 
 VERSION = _get_version()
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _test_env_python() -> Path:
+    return REPO_ROOT / ".artifacts" / "test" / "test-env" / "bin" / "python"
+
+
+def _ensure_test_env() -> None:
+    """Ensure we run tests in a pinned, isolated env.
+
+    This avoids leaking whatever pytest plugins happen to be installed globally,
+    and keeps CI/dev output warning-free (without filtering warnings away).
+    """
+    if os.environ.get("MATILDA_VOICE_TEST_ENV") == "1":
+        return
+
+    py = _test_env_python()
+    env_dir = py.parent.parent
+
+    if not py.exists():
+        env_dir.mkdir(parents=True, exist_ok=True)
+        venv.EnvBuilder(with_pip=True, clear=False).create(env_dir)
+
+    env = os.environ.copy()
+    env["PIP_DISABLE_PIP_VERSION_CHECK"] = "1"
+
+    # Note: Voice depends on `matilda-transport`, which isn't published to PyPI.
+    transport_dir = REPO_ROOT.parent / "matilda-transport"
+    if transport_dir.is_dir():
+        subprocess.run(
+            [str(py), "-m", "pip", "install", "-q", "--disable-pip-version-check", "-e", str(transport_dir)],
+            env=env,
+            check=False,
+        )
+    subprocess.run(
+        [str(py), "-m", "pip", "install", "-q", "--disable-pip-version-check", "-e", ".[dev]"],
+        cwd=str(REPO_ROOT),
+        env=env,
+        check=False,
+    )
+
+    os.environ["MATILDA_VOICE_TEST_ENV"] = "1"
+    os.execv(str(py), [str(py), str(Path(__file__).resolve()), *sys.argv[1:]])
 
 
 def show_examples():
@@ -253,6 +300,8 @@ def run_e2e_tests(args):
 
 def main():
     """Main entry point."""
+    _ensure_test_env()
+
     # Custom help
     if len(sys.argv) == 2 and sys.argv[1] in ["-h", "--help"]:
         show_examples()

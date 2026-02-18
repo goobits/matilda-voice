@@ -9,7 +9,7 @@ description = "Command-line text-to-speech tool with multiple providers, voice c
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "License :: OSI Approved :: MIT License", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Topic :: Multimedia :: Sound/Audio :: Speech", "Topic :: Software Development :: Libraries :: Python Modules",]
-dependencies = [ "click>=8.0.0,<9.0", "rich-click>=1.7.0,<2.0", "rich>=13.0.0,<14.0", "edge-tts>=7.0.0,<8.0", "httpx>=0.24.0,<1.0", "pydantic>=2.0.0,<3.0", "bleach>=6.1.0,<7.0", "validators>=0.20.0,<1.0", "aiohttp>=3.8.0,<4.0", "toml>=0.10.2,<1.0", "pyyaml>=6.0,<7.0", "matilda-transport>=0.1.0",]
+dependencies = [ "click>=8.0.0,<9.0", "rich-click>=1.7.0,<2.0", "rich>=13.0.0,<14.0", "edge-tts>=7.0.0,<8.0", "httpx>=0.24.0,<1.0", "pydantic>=2.0.0,<3.0", "bleach>=6.1.0,<7.0", "validators>=0.20.0,<1.0", "aiohttp>=3.8.0,<4.0", "toml>=0.10.2,<1.0", "pyyaml>=6.0,<7.0", "requests>=2.0.0,<3.0", "matilda-transport>=0.1.0",]
 [[project.authors]]
 name = "TTS CLI Contributors"
 
@@ -26,7 +26,7 @@ chatterbox-legacy = [ "chatterbox-tts>=0.1.2,<1.0", "torch>=2.6.0,<3.0", "torcha
 local = [ "TTS>=0.22.0", "torch>=2.0.0,<3.0", "torchaudio>=2.0.0,<3.0", "soundfile>=0.13.0,<1.0",]
 all-local = [ "TTS>=0.22.0", "chatterbox-tts>=0.1.2,<1.0", "torch>=2.0.0,<3.0", "torchaudio>=2.0.0,<3.0", "soundfile>=0.13.0,<1.0",]
 all = [ "openai>=2.8.0,<3.0", "google-cloud-texttospeech>=2.0.0,<3.0", "elevenlabs>=1.0.0,<2.0", "TTS>=0.22.0", "torch>=2.0.0,<3.0", "torchaudio>=2.0.0,<3.0", "soundfile>=0.13.0,<1.0",]
-dev = [ "pytest>=7.0,<9.0", "pytest-asyncio>=0.20.0,<1.0", "pytest-cov>=4.0,<6.0", "pytest-xdist>=3.0.0,<4.0", "pytest-sugar>=0.9.0,<2.0", "pytest-clarity>=1.0.0,<2.0", "pytest-html>=3.0.0,<5.0", "pytest-json-report>=1.5.0,<2.0", "black>=22.0,<25.0", "ruff>=0.1.0,<1.0", "mypy>=1.0.0,<2.0", "hypothesis>=6.0,<7.0",]
+dev = [ "pytest>=8.2.0,<10.0", "pytest-asyncio>=1.0.0,<2.0", "pytest-cov>=4.0,<6.0", "pytest-xdist>=3.0.0,<4.0", "pytest-sugar>=0.9.0,<2.0", "pytest-clarity>=1.0.0,<2.0", "pytest-html>=3.0.0,<5.0", "pytest-json-report>=1.5.0,<2.0", "black>=22.0,<25.0", "ruff>=0.1.0,<1.0", "mypy>=1.0.0,<2.0", "hypothesis>=6.0,<7.0",]
 publish = [ "build>=1.0,<2.0", "twine>=4.0,<6.0",]
 
 [project.scripts]
@@ -86,7 +86,7 @@ python_classes = [ "Test*",]
 python_functions = [ "test_*",]
 addopts = [ "-v", "--tb=short", "--strict-markers", "--strict-config", "--durations=10",]
 markers = [ "slow: marks tests as slow (deselect with '-m \"not slow\"')", "integration: marks tests as integration tests", "unit: marks tests as unit tests", "e2e: marks tests as end-to-end tests", "config: marks tests related to configuration", "audio: marks tests related to audio processing", "provider: marks tests related to TTS providers", "workflow: marks tests as workflow tests", "benchmark: marks tests as benchmark tests", "pipeline: marks tests as pipeline integration tests", "realuser: marks tests as real user scenario tests", "stress: marks tests as stress tests", "performance: marks tests as performance tests", "regression: marks tests as regression tests", "requires_providers: mark test to require actual TTS providers", "requires_credentials: mark test to require API credentials", "requires_chatterbox: requires chatterbox-tts library installed", "requires_coqui: requires Coqui TTS library installed", "requires_elevenlabs: requires ELEVENLABS_API_KEY environment variable", "requires_openai: requires OPENAI_API_KEY environment variable", "requires_google: requires GOOGLE_CLOUD_API_KEY or GOOGLE_APPLICATION_CREDENTIALS", "requires_network: requires network access to real TTS providers", "requires_ci_skip: tests that should be skipped in CI environments",]
-filterwarnings = [ "ignore::DeprecationWarning", "ignore::PendingDeprecationWarning",]
+filterwarnings = []
 
 [tool.ruff.lint.per-file-ignores]
 "src/matilda_voice/helpers/__init__.py" = [ "F401",]
