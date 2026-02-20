@@ -33,10 +33,8 @@ voice config show
 
 ```bash
 ./setup.sh install --dev
-./test.sh
-ruff check . --fix
-black .
-mypy src/
+./scripts/test.py
+make quality
 ```
 
 ## Documentation
