@@ -86,6 +86,7 @@ OPTIONS:
   ./test.py --coverage                         # Generate coverage report
   ./test.py -c                                 # Short form for coverage
   ./test.py --verbose                          # Verbose output
+  ./test.py --sequential                       # Force sequential test execution
   ./test.py --parallel                         # Run tests in parallel (auto workers)
   ./test.py --parallel 4                       # Run tests with 4 workers
   ./test.py --test test_edge                   # Run specific test pattern
@@ -317,6 +318,7 @@ def main():
     )
     parser.add_argument("--coverage", "-c", action="store_true", help="Generate coverage report")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose test output")
+    parser.add_argument("--sequential", action="store_true", help="Force sequential execution")
     parser.add_argument(
         "--parallel",
         "-p",
@@ -331,6 +333,9 @@ def main():
     parser.add_argument("--version", action="store_true", help="Show version")
 
     args = parser.parse_args()
+
+    if args.sequential:
+        args.parallel = "off"
 
     if args.version:
         print(f"Matilda Voice Test Runner v{VERSION}")

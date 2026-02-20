@@ -5,12 +5,12 @@ Unified Voice CLI supporting multiple providers with streaming and file output.
 ## Quick Start
 
 ```bash
-./setup.sh install
+./scripts/setup.sh install
 voice "Hello world"
 voice save "Hello world" -o greeting.mp3
 ```
 
-## Providers
+## Basic Usage
 
 ```bash
 voice @edge "Hello"
@@ -18,6 +18,7 @@ voice @openai "Hello"
 voice @elevenlabs "Hello"
 voice @google "Hello"
 voice @chatterbox "Hello"
+./scripts/test.py --help
 ```
 
 ## Configuration
@@ -32,8 +33,8 @@ voice config show
 ## Development
 
 ```bash
-./setup.sh install --dev
-./scripts/test.py
+./scripts/setup.sh install --dev
+make test
 make quality
 ```
 
